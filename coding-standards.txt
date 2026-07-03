@@ -1,0 +1,16 @@
+Variables: user_name
+Functions: get_company_reports()
+Class:InvestmentService
+Constants: DEFAULT_MODEL
+Modules: investment_service.py
+
+Repository Rules:
+Never -> from app.services.openai import *
+Always - > from app.services.openai_service import OpenAIService
+
+Never -> print()
+Use -> logger.info(), logger.error()
+
+Always add type hints.
+Instead of -> def search(query):
+Write - > def search(query: str) -> list[str]:
