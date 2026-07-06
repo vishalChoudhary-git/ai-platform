@@ -7,7 +7,6 @@ from app.core.logger import logger
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
     logger.info("🚀 Starting AI Platform...")
 
     # Future:
