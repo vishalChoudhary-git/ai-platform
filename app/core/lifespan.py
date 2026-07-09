@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from sqlalchemy import text
 
 from app.core.logger import logger
+from app.db.session import engine
 
 
 @asynccontextmanager
@@ -11,6 +13,9 @@ async def lifespan(app: FastAPI):
 
     # Future:
     # Connect PostgreSQL
+    async with engine.begin() as conn:
+        await conn.execute(text("SELECT 1"))
+    logger.info("Database connected")
     # Connect Redis
     # Initialize OpenAI
     # Register Agents
@@ -21,4 +26,6 @@ async def lifespan(app: FastAPI):
 
     # Future:
     # Close DB
+    await engine.dispose()
+    logger.info("Database disconnected")
     # Close Redis

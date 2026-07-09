@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     port: int = 8000
     debug: bool = True
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    database_url: str
 
 
 @lru_cache
