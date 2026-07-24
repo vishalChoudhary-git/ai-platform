@@ -15,7 +15,7 @@ class CompanyRepository:
         query = query.offset((page - 1) * size).limit(size)
         result = await self.db.execute(query)
         print(f"result============== {result}")
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_by_ticker(self, ticker: str) -> Company | None:
         result = await self.db.execute(select(Company).where(Company.ticker == ticker))
