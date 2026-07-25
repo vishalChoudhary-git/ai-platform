@@ -2,10 +2,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 
-from app.dependencies.company import get_company_service
-from app.schemas.common import PaginationParams
-from app.schemas.company import CompanyCreate, CompanyResponse
-from app.services.company_service import CompanyService
+from app.core.schemas.common import PaginationParams
+from app.modules.knowledge.api.dependencies import get_company_service
+from app.modules.knowledge.schemas.company import CompanyCreate, CompanyResponse
+from app.modules.knowledge.services.company_service import CompanyService
 
 router = APIRouter(
     prefix="/companies",

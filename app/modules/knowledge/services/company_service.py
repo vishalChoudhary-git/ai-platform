@@ -1,8 +1,8 @@
 from fastapi import HTTPException, status
 
-from app.models.company import Company
-from app.repositories.company_repository import CompanyRepository
-from app.schemas.company import CompanyCreate
+from app.modules.knowledge.domain.models.company import Company
+from app.modules.knowledge.repositories.company_repository import CompanyRepository
+from app.modules.knowledge.schemas.company import CompanyCreate
 
 
 class CompanyService:

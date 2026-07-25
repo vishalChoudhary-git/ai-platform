@@ -1,6 +1,6 @@
 from pydantic import ConfigDict, Field
 
-from app.schemas.base import BaseSchema
+from app.core.schemas.base import BaseSchema
 
 
 class CompanyCreate(BaseSchema):

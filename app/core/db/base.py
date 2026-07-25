@@ -6,4 +6,4 @@ class Base(DeclarativeBase):
 
 
 # Import all models so Alembic can discover them.
-import app.models  # noqa: F401, E402
+import app.modules.knowledge.domain.models  # noqa: F401, E402
