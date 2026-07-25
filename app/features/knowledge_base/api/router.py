@@ -3,9 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from app.core.schemas.common import PaginationParams
-from app.modules.knowledge.api.dependencies import get_company_service
-from app.modules.knowledge.schemas.company import CompanyCreate, CompanyResponse
-from app.modules.knowledge.services.company_service import CompanyService
+from app.features.knowledge_base.api.dependencies import get_company_service
+from app.features.knowledge_base.schemas.company import CompanyCreate, CompanyResponse
+from app.features.knowledge_base.services.company_service import CompanyService
 
 router = APIRouter(
     prefix="/companies",

@@ -5,7 +5,7 @@ from app.core.config import app_settings
 from app.core.lifespan import lifespan
 from app.core.registry import connector_registry, extension_registry
 from app.extensions.upload import UploadExtension
-from app.modules.knowledge.api.router import router as company_router
+from app.features.knowledge_base.api.router import router as company_router
 
 
 def create_app() -> FastAPI:
