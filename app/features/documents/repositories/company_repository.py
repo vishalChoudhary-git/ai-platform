@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.features.knowledge_base.models.company import Company
+from app.features.documents.models.company import Company
 
 
 class CompanyRepository:
