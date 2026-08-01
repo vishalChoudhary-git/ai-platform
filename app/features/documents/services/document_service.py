@@ -1,8 +1,11 @@
+from sqlalchemy import UUID
+
 from app.core.ingestion.factory import DocumentFactory
 from app.core.ingestion.types import RawDocument
 from app.core.storage.base import StorageProvider
 from app.core.utils.hashing import calculate_sha256
 from app.features.documents.models.document import Document
+from app.features.documents.models.enums import DocumentStatus
 from app.features.documents.repositories import DocumentRepository
 
 
@@ -42,4 +45,20 @@ class DocumentService:
 
         return await self.repository.create(
             document,
+        )
+
+    async def process_document(
+        self,
+        document_id: UUID,
+    ):
+        await self.repository.update_status(
+            document_id,
+            DocumentStatus.PROCESSING,
+        )
+
+        # PDF Parsing comes later
+
+        await self.repository.update_status(
+            document_id,
+            DocumentStatus.READY,
         )

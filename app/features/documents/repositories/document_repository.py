@@ -1,9 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.documents.models.document import Document
+from app.features.documents.models.enums import DocumentStatus
 
 
 class DocumentRepository:
@@ -59,5 +60,16 @@ class DocumentRepository:
         document: Document,
     ) -> None:
         await self.session.delete(document)
+
+        await self.session.commit()
+
+    async def update_status(
+        self,
+        document_id: UUID,
+        status: DocumentStatus,
+    ) -> None:
+        stmt = update(Document).where(Document.id == document_id).values(status=status)
+
+        await self.session.execute(stmt)
 
         await self.session.commit()

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile
 
 from app.core.ingestion.types import RawDocument
 from app.features.documents.models.enums import (
@@ -10,8 +10,9 @@ from app.features.documents.schemas.upload import (
 from app.features.documents.services import (
     DocumentService,
 )
+from app.features.documents.services.ingestion_service import IngestionService
 
-from .dependencies import get_document_service
+from .dependencies import get_document_service, get_ingestion_service
 
 router = APIRouter(
     prefix="/documents",
@@ -24,9 +25,13 @@ router = APIRouter(
     response_model=UploadResponse,
 )
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    service: DocumentService = Depends(
+    document_service: DocumentService = Depends(
         get_document_service,
+    ),
+    ingestion_service: IngestionService = Depends(
+        get_ingestion_service,
     ),
 ):
     raw_document = RawDocument(
@@ -37,7 +42,11 @@ async def upload_document(
         metadata={},
     )
 
-    document = await service.ingest(raw_document)
+    document = await document_service.ingest(raw_document)
+    background_tasks.add_task(
+        ingestion_service.process_document,
+        document.id,
+    )
 
     return UploadResponse.model_validate(document)
 
