@@ -25,6 +25,16 @@ class DocumentRepository:
 
         return document
 
+    async def get_by_checksum(
+        self,
+        checksum: str,
+    ) -> Document | None:
+        stmt = select(Document).where(Document.checksum == checksum)
+
+        result = await self.session.execute(stmt)
+
+        return result.scalar_one_or_none()
+
     async def get_by_id(
         self,
         document_id: UUID,

@@ -1,41 +1,70 @@
-from typing import Annotated
+from fastapi import APIRouter, Depends, File, UploadFile
 
-from fastapi import APIRouter, Depends, status
-
-from app.core.schemas.common import PaginationParams
-from app.features.documents.api.dependencies import get_company_service
-from app.features.documents.schemas.company import CompanyCreate, CompanyResponse
-from app.features.documents.services.company_service import CompanyService
-
-router = APIRouter(
-    prefix="/companies",
-    tags=["Companies"],
+from app.core.ingestion.types import RawDocument
+from app.features.documents.models.enums import (
+    DocumentSource,
+)
+from app.features.documents.schemas.upload import (
+    UploadResponse,
+)
+from app.features.documents.services import (
+    DocumentService,
 )
 
+from .dependencies import get_document_service
 
-@router.get("/", response_model=list[CompanyResponse])
-async def get_companies(
-    pagination: Annotated[
-        PaginationParams,
-        Depends(),
-    ],
-    service: CompanyService = Depends(get_company_service),
-    sector: str | None = None,
-):
-    return await service.get_all(
-        pagination.page,
-        pagination.size,
-        sector,
-    )
+router = APIRouter(
+    prefix="/documents",
+    tags=["Documents"],
+)
 
 
 @router.post(
-    "/",
-    response_model=CompanyResponse,
-    status_code=status.HTTP_201_CREATED,
+    "/upload",
+    response_model=UploadResponse,
 )
-async def create_company(
-    request: CompanyCreate,
-    service: CompanyService = Depends(get_company_service),
+async def upload_document(
+    file: UploadFile = File(...),
+    service: DocumentService = Depends(
+        get_document_service,
+    ),
 ):
-    return await service.create(request)
+    raw_document = RawDocument(
+        content=await file.read(),
+        filename=file.filename,
+        mime_type=file.content_type or "application/octet-stream",
+        source=DocumentSource.UPLOAD,
+        metadata={},
+    )
+
+    document = await service.ingest(raw_document)
+
+    return UploadResponse.model_validate(document)
+
+
+# @router.get("/", response_model=list[CompanyResponse])
+# async def get_companies(
+#     pagination: Annotated[
+#         PaginationParams,
+#         Depends(),
+#     ],
+#     service: CompanyService = Depends(get_company_service),
+#     sector: str | None = None,
+# ):
+#     return await service.get_all(
+#         pagination.page,
+#         pagination.size,
+#         sector,
+#     )
+
+
+# @router.post(
+#     "/",
+#     response_model=CompanyResponse,
+#     status_code=status.HTTP_201_CREATED,
+# )
+# async def create_company(
+#     request: CompanyCreate,
+#     service: CompanyService = Depends(get_company_service),
+# ):
+#     return await service.create(request)
