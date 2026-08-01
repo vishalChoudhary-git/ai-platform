@@ -2,6 +2,10 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db.session import get_db
+from app.core.storage.base import StorageProvider
+from app.core.storage.cloudflare_r2 import (
+    CloudflareR2StorageProvider,
+)
 from app.features.documents.repositories import DocumentRepository
 from app.features.documents.repositories.company_repository import CompanyRepository
 from app.features.documents.services import DocumentService
@@ -24,9 +28,19 @@ def get_document_repository(
     return DocumentRepository(session)
 
 
+def get_storage_provider() -> StorageProvider:
+    return CloudflareR2StorageProvider()
+
+
 def get_document_service(
     repository: DocumentRepository = Depends(
         get_document_repository,
     ),
+    storage: StorageProvider = Depends(
+        get_storage_provider,
+    ),
 ) -> DocumentService:
-    return DocumentService(repository)
+    return DocumentService(
+        repository,
+        storage,
+    )

@@ -10,11 +10,13 @@ class DocumentFactory:
     def create(
         raw_document: RawDocument,
         checksum: str,
+        storage_key: str,
     ) -> Document:
         return Document(
             title=raw_document.filename,
             file_name=raw_document.filename,
             mime_type=raw_document.mime_type,
+            storage_key=storage_key,
             checksum=checksum,
             source=raw_document.source,
             status=DocumentStatus.PENDING,

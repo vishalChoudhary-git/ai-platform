@@ -66,3 +66,7 @@ class Document(UUIDMixin, TimestampMixin, Base):
         server_default=text("'{}'::jsonb"),
         nullable=False,
     )
+    storage_key: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+    )
