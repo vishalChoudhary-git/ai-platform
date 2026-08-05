@@ -9,24 +9,14 @@ resolution-markers = [
 [[package]]
 name = "ai-document-intelligence"
 version = "0.1.0"
-source = { editable = "../ai-document-intelligence" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "pymupdf" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "pydantic", specifier = ">=2.0" },
-    { name = "pymupdf", specifier = ">=1.26.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy", specifier = ">=1.17.0" },
-    { name = "pytest", specifier = ">=8.4.0" },
-    { name = "ruff", specifier = ">=0.12.0" },
-    { name = "twine", specifier = ">=6.1.0" },
+sdist = { url = "https://files.pythonhosted.org/packages/39/83/9147184ec83bb40ccc89560b4c63efa4e92c523fae97aa00e5df84c9ca2d/ai_document_intelligence-0.1.0.tar.gz", hash = "sha256:03356fa6ad6c7da5085c9e2fecc2796360aa4508d4ee8b4713173d04d53155e1", size = 148180, upload-time = "2026-08-03T03:51:23.715Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/22/ef/5eabef60e1740d3676ccfde3a7979f0554e9f8f0d9e0fcc66e4ee83e06fc/ai_document_intelligence-0.1.0-py3-none-any.whl", hash = "sha256:46634092304aa95615dc8760546a912d273a2811ea252d181669bdec69780546", size = 9647, upload-time = "2026-08-03T03:51:21.726Z" },
 ]
 
 [[package]]
@@ -57,7 +47,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ai-document-intelligence", editable = "../ai-document-intelligence" },
+    { name = "ai-document-intelligence", specifier = ">=0.1.0" },
     { name = "alembic", specifier = ">=1.18.5" },
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "boto3", specifier = ">=1.43.62" },
