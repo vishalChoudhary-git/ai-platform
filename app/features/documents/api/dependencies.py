@@ -51,5 +51,11 @@ def get_ingestion_service(
     repository: DocumentRepository = Depends(
         get_document_repository,
     ),
+    storage: StorageProvider = Depends(
+        get_storage_provider,
+    ),
 ) -> IngestionService:
-    return IngestionService(repository)
+    return IngestionService(
+        repository,
+        storage,
+    )

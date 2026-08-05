@@ -1,3 +1,5 @@
+Built and published an open-source Python package for intelligent document parsing with support for Docling, table extraction, metadata generation, and semantic chunking.
+
 HTTP Request
     ↓
 Pydantic Validation
