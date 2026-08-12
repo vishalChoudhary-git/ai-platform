@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     r2_secret_access_key: str
     r2_bucket_name: str
     r2_endpoint_url: str
+    llama_cloud_api_key: str
+    tier: str
+    openai_api_key: str
 
 
 @lru_cache

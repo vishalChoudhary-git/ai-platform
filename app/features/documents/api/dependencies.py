@@ -8,6 +8,9 @@ from app.core.storage.cloudflare_r2 import (
 )
 from app.features.documents.repositories import DocumentRepository
 from app.features.documents.repositories.company_repository import CompanyRepository
+from app.features.documents.repositories.document_chunk_repository import (
+    DocumentChunkRepository,
+)
 from app.features.documents.services import DocumentService
 from app.features.documents.services.company_service import CompanyService
 from app.features.documents.services.ingestion_service import IngestionService
@@ -47,15 +50,25 @@ def get_document_service(
     )
 
 
+def get_document_chunk_repository(
+    session: AsyncSession = Depends(get_db),
+) -> DocumentChunkRepository:
+    return DocumentChunkRepository(session)
+
+
 def get_ingestion_service(
     repository: DocumentRepository = Depends(
         get_document_repository,
+    ),
+    chunk_repository: DocumentChunkRepository = Depends(
+        get_document_chunk_repository,
     ),
     storage: StorageProvider = Depends(
         get_storage_provider,
     ),
 ) -> IngestionService:
     return IngestionService(
-        repository,
-        storage,
+        repository=repository,
+        chunk_repository=chunk_repository,
+        storage=storage,
     )

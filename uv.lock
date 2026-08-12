@@ -8,15 +8,18 @@ resolution-markers = [
 
 [[package]]
 name = "ai-document-intelligence"
-version = "0.1.0"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "liteparse" },
+    { name = "llama-cloud" },
+    { name = "openai" },
     { name = "pydantic" },
     { name = "pymupdf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/39/83/9147184ec83bb40ccc89560b4c63efa4e92c523fae97aa00e5df84c9ca2d/ai_document_intelligence-0.1.0.tar.gz", hash = "sha256:03356fa6ad6c7da5085c9e2fecc2796360aa4508d4ee8b4713173d04d53155e1", size = 148180, upload-time = "2026-08-03T03:51:23.715Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2e/9a/3c462a314d285f5c92150de1afbf9299fd8f39c42cef0d6f610345e5f8f3/ai_document_intelligence-0.3.0.tar.gz", hash = "sha256:4578678bb5b059b1363b69a3d8a7e0e45299b9bb82a0d20cd31fbff16d072065", size = 414987, upload-time = "2026-08-11T13:21:58.559Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/22/ef/5eabef60e1740d3676ccfde3a7979f0554e9f8f0d9e0fcc66e4ee83e06fc/ai_document_intelligence-0.1.0-py3-none-any.whl", hash = "sha256:46634092304aa95615dc8760546a912d273a2811ea252d181669bdec69780546", size = 9647, upload-time = "2026-08-03T03:51:21.726Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/97/6b88f8bbd3e11b28ad0e1d5cefaddfaef07cf0f2eba2195911db41bfeec4/ai_document_intelligence-0.3.0-py3-none-any.whl", hash = "sha256:32d71dca4829ac3f76e9875397471e8d944856e111c13de69cf9edbf0948716a", size = 26184, upload-time = "2026-08-11T13:21:55.948Z" },
 ]
 
 [[package]]
@@ -30,6 +33,7 @@ dependencies = [
     { name = "boto3" },
     { name = "fastapi" },
     { name = "openai" },
+    { name = "pgvector" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic-settings" },
     { name = "python-multipart" },
@@ -47,12 +51,13 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ai-document-intelligence", specifier = ">=0.1.0" },
+    { name = "ai-document-intelligence", specifier = ">=0.3.0" },
     { name = "alembic", specifier = ">=1.18.5" },
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "boto3", specifier = ">=1.43.62" },
     { name = "fastapi", specifier = ">=0.139.0" },
     { name = "openai", specifier = ">=2.44.0" },
+    { name = "pgvector", specifier = ">=0.4.2" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.4" },
     { name = "pydantic-settings", specifier = ">=2.14.2" },
     { name = "python-multipart", specifier = ">=0.0.20" },
@@ -462,6 +467,43 @@ wheels = [
 ]
 
 [[package]]
+name = "liteparse"
+version = "2.11.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/58/75de54a4314285d2ff94b1eacfe9e4b282cb600be4f0cc9bb26a0f62b152/liteparse-2.11.1.tar.gz", hash = "sha256:7d5fba0e9070e83461f2d4e5bde8d97376d23773b5d6cd0df48f048eeee42759", size = 451352, upload-time = "2026-08-05T21:37:46.17Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1b/b0/ffcafa2c70279b90c82189a490184e1b821371a72b6134558c3b90596b6b/liteparse-2.11.1-cp314-cp314-macosx_10_12_x86_64.whl", hash = "sha256:c660a1bc116957a05d2f0ecd99838e11f0d2490e812d0fc03ef098a5d70fa352", size = 12470416, upload-time = "2026-08-05T21:37:12.923Z" },
+    { url = "https://files.pythonhosted.org/packages/bf/d8/4d37c0fdefd96a5cf6d521d15bad2cdef25f2811cee80a7d4863851d22bb/liteparse-2.11.1-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:07ea76a72a01629043816850d78812fb256fc9a98a637e42346522448c86a53d", size = 11857228, upload-time = "2026-08-05T21:37:15.065Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/34/d3dc714dfbd985923ea43a1d948e57cb5e191a1ad3c6e3991f94e9631712/liteparse-2.11.1-cp314-cp314-manylinux_2_28_aarch64.whl", hash = "sha256:13b47f7fdc881149fe59bad66053a6a8773ef6d436c6644a8ea9f7cc1324b631", size = 13397733, upload-time = "2026-08-05T21:37:17.35Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/01/5d05edf0f451a6e100b0fb138644d8023f25b752a243792a6c7480a23af0/liteparse-2.11.1-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:d41840a8576d292e0c0ec47bedef17e3310437021088024b09fca94b3402251c", size = 13659304, upload-time = "2026-08-05T21:37:19.664Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/c3/a71099bddc07bf23bc732a9b20b3fdaac364956488fea3b58cc45e537e38/liteparse-2.11.1-cp314-cp314-win_amd64.whl", hash = "sha256:23b647cf90f1d090e022ed657fc7b5100e39af3a36475fb9e4c2575a333d3583", size = 11899750, upload-time = "2026-08-05T21:37:22.231Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/d0/0896ad5537cb21c7866b6579d495ddf82b9a29f11479a359f46fee4fcda5/liteparse-2.11.1-cp314-cp314-win_arm64.whl", hash = "sha256:8ac94dc2637fdf77e9ee4af2ee64c79e1cca353cef5eb13a2b9d5251d30f0cd6", size = 11220761, upload-time = "2026-08-05T21:37:24.545Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/e9/5d30629905c89e1b50c4ab66c3a5cc5604481d078ad115b3909a01ffc37c/liteparse-2.11.1-cp314-cp314t-manylinux_2_28_aarch64.whl", hash = "sha256:d92c2301c096cd2432fbeb51a736233526ea9780a9f55c24d73088122af4014c", size = 13396057, upload-time = "2026-08-05T21:37:26.857Z" },
+    { url = "https://files.pythonhosted.org/packages/75/d5/42e5a848005dfed5669f24999afd91d59a5ca70940a752b240c9fa34b0fc/liteparse-2.11.1-cp314-cp314t-manylinux_2_28_x86_64.whl", hash = "sha256:c1babe90bbb455747abc14e9ac1f84375a9eb3abf09b2f2b5ae0237144ff8737", size = 13658225, upload-time = "2026-08-05T21:37:29.566Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/94/f357b39b23519875bd9e3cf387146e345ad856e339b71d78477d6b9eff19/liteparse-2.11.1-cp315-cp315-manylinux_2_28_aarch64.whl", hash = "sha256:7b3cc4d181ecd00baecace59d57890223a69a2b5b49afffc1af8ce81a5af9f6e", size = 13401484, upload-time = "2026-08-05T21:37:31.904Z" },
+    { url = "https://files.pythonhosted.org/packages/41/d0/c96a4bd70cc3a26d03c0cbdfdfbad46cbfe86742a42a8ee63b153d4aa23f/liteparse-2.11.1-cp315-cp315-manylinux_2_28_x86_64.whl", hash = "sha256:62f9b37c78b14f0ce09ce4b72a4ac33c6e5ab1382908d0faf527d1dd3b928a02", size = 13658746, upload-time = "2026-08-05T21:37:34.376Z" },
+    { url = "https://files.pythonhosted.org/packages/a0/bb/8d13cf2054ff0a5a921a9551a045d15a6c53b685b02359cac0376f80dff9/liteparse-2.11.1-cp315-cp315t-manylinux_2_28_aarch64.whl", hash = "sha256:018f94148520a2f0d598922825934aa308d1da140bdad789d7ef35763c93dcef", size = 13396925, upload-time = "2026-08-05T21:37:36.927Z" },
+    { url = "https://files.pythonhosted.org/packages/09/81/58d04c615d6c1f7339bdfde6a5766827813532651982e494e54b5e395496/liteparse-2.11.1-cp315-cp315t-manylinux_2_28_x86_64.whl", hash = "sha256:bf5850fac17bb579c4e3f0a3645c25ec28e94aaab8f6aadf118fa2fa38b6638d", size = 13661086, upload-time = "2026-08-05T21:37:39.163Z" },
+]
+
+[[package]]
+name = "llama-cloud"
+version = "2.13.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b6/b5/455b11e35ce79da0223c1154e408332075b92af4dfbdfd9a041f0d7ebcf9/llama_cloud-2.13.0.tar.gz", hash = "sha256:3558cef00e6694f3c1de63de5881bd6a8563a6f72f2fcdae45fc46937de6ec2f", size = 3580349, upload-time = "2026-07-22T23:22:35.879Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/44/93df904042cdb50999c322022a1a3dc43b4687a2eea516f54e8c85060a46/llama_cloud-2.13.0-py3-none-any.whl", hash = "sha256:bede8c3e549a03ca1f7504ffe5002eb3b2257db5e2641664a6ab2b3bef46c8c8", size = 481577, upload-time = "2026-07-22T23:22:34.02Z" },
+]
+
+[[package]]
 name = "mako"
 version = "1.3.12"
 source = { registry = "https://pypi.org/simple" }
@@ -553,7 +595,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "2.44.0"
+version = "2.53.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -565,9 +607,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/49/f5/7c7cb955305cb41f7f3c5fd7e0e38bf6bbf2658468863d4b7b868a5cb8df/openai-2.44.0.tar.gz", hash = "sha256:68a5a5ffad82b8ff7d451c437529fb64f7c3b8123aaf0c021966a882d9e3947d", size = 988753, upload-time = "2026-06-24T20:56:02.293Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ef/cf/36e3e7235fdf6d125c052acc0970924611b17a20a4fe580596faf4566a65/openai-2.53.0.tar.gz", hash = "sha256:baf5802ad08980e1d9d561e1b996e800c8bcd14af5847c6d0e7a5cc59e4d4116", size = 1099435, upload-time = "2026-08-03T21:42:01.664Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ae/f4/561ed79fd94876160018a5e75254cfcb9b0e62d4dded9dcb20072e86d623/openai-2.44.0-py3-none-any.whl", hash = "sha256:0a2a3ab2e29aeda368700f662ff9ba0f9df17ba4c54577a64e08b8115a3cc0ad", size = 1366216, upload-time = "2026-06-24T20:55:58.882Z" },
+    { url = "https://files.pythonhosted.org/packages/78/0f/cc6afea3542a5142c5d8fc8211c5e059a8375105d004a41dfa2c7948dbb0/openai-2.53.0-py3-none-any.whl", hash = "sha256:c694ffc747a3c4d1663ef2b07b811315a476164ee5efa3a993967349ebca7618", size = 1659829, upload-time = "2026-08-03T21:41:59.581Z" },
 ]
 
 [[package]]
@@ -577,6 +619,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5a/82/42f767fc1c1143d6fd36efb827202a2d997a375e160a71eb2888a925aac1/pathspec-1.1.1.tar.gz", hash = "sha256:17db5ecd524104a120e173814c90367a96a98d07c45b2e10c2f3919fff91bf5a", size = 135180, upload-time = "2026-04-27T01:46:08.907Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c73ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl", hash = "sha256:a00ce642f577bf7f473932318056212bc4f8bfdf53128c78bbd5af0b9b20b189", size = 57328, upload-time = "2026-04-27T01:46:07.06Z" },
+]
+
+[[package]]
+name = "pgvector"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/ec/6eb80aebc728200f95229219882994c1b0585b956ca47da5edb9d062627a/pgvector-0.5.0.tar.gz", hash = "sha256:07a9dcf735696879406983afc6eba9a787cef7c0cf6c367ca1a5779f036dee74", size = 35170, upload-time = "2026-07-06T18:27:27.767Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5c/e4/a5573f2c579ca9ad133293bfb624148ba0893674ca4a6eeec85ced9a6a09/pgvector-0.5.0-py3-none-any.whl", hash = "sha256:fedc9800894e6da2be51358d7b7c574bf34f247ca741a5a09513622135f5964f", size = 30958, upload-time = "2026-07-06T18:27:26.797Z" },
 ]
 
 [[package]]
