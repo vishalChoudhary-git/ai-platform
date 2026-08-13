@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends
 
 from app.retrieval.api.dependencies import get_retrieval_service
-from app.retrieval.schemas import RetrievalRequest, RetrievalResponse
+from app.retrieval.schemas import (
+    KeywordSearchRequest,
+    KeywordSearchResponse,
+    RetrievalRequest,
+    RetrievalResponse,
+)
 from app.retrieval.services import RetrievalService
 
 router = APIRouter(
@@ -21,3 +26,16 @@ async def search(
     ),
 ) -> RetrievalResponse:
     return await service.retrieve(request)
+
+
+@router.post(
+    "/keyword-search",
+    response_model=KeywordSearchResponse,
+)
+async def keyword_search(
+    request: KeywordSearchRequest,
+    service: RetrievalService = Depends(
+        get_retrieval_service,
+    ),
+) -> KeywordSearchResponse:
+    return await service.keyword_search(request)
