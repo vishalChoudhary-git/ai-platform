@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     openrouter_site_url: str = "https://github.com/vishalChoudhary-git/ai-platform"
     openrouter_site_name: str = "AI Platform"
     openrouter_reranker_model: str = "nvidia/llama-nemotron-rerank-vl-1b-v2:free"
+    rag_llm_model: str = "gpt-4.1-mini"
 
 
 @lru_cache
