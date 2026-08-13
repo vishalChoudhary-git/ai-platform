@@ -2,6 +2,9 @@ from ai_document_intelligence.embeddings import EmbeddingProvider
 
 from app.retrieval.repositories import RetrievalRepository
 from app.retrieval.schemas import (
+    KeywordSearchRequest,
+    KeywordSearchResponse,
+    KeywordSearchResult,
     RetrievalRequest,
     RetrievalResponse,
     RetrievedChunk,
@@ -45,5 +48,31 @@ class RetrievalService:
         ]
 
         return RetrievalResponse(
+            results=results,
+        )
+
+    async def keyword_search(
+        self,
+        request: KeywordSearchRequest,
+    ) -> KeywordSearchResponse:
+        rows = await self.repository.keyword_search(
+            query=request.query,
+            top_k=request.top_k,
+        )
+
+        results = [
+            KeywordSearchResult(
+                chunk_id=row.id,
+                document_id=row.document_id,
+                text=row.text,
+                page_number=row.page_number,
+                chunk_index=row.chunk_index,
+                metadata=row.metadata_,
+                score=float(row.score),
+            )
+            for row in rows
+        ]
+
+        return KeywordSearchResponse(
             results=results,
         )
