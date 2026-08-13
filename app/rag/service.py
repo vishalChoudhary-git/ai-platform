@@ -1,3 +1,5 @@
+import re
+
 from app.rag.context_builder import ContextBuilder
 from app.rag.llm.base import LLMGenerator
 from app.rag.schemas import RAGResponse, RAGSource
@@ -5,6 +7,8 @@ from app.retrieval.services import RetrievalService
 
 
 class RAGService:
+    _SOURCE_PATTERN = re.compile(r"\[(\d+)\]")
+
     def __init__(
         self,
         retrieval_service: RetrievalService,
@@ -47,7 +51,7 @@ class RAGService:
             context=context,
         )
 
-        sources = [
+        all_sources = [
             RAGSource(
                 source_index=index,
                 chunk_id=chunk.chunk_id,
@@ -59,7 +63,29 @@ class RAGService:
             for index, chunk in enumerate(chunks, start=1)
         ]
 
+        sources = self._select_cited_sources(
+            answer=answer,
+            sources=all_sources,
+        )
+
         return RAGResponse(
             answer=answer,
             sources=sources,
         )
+
+    @classmethod
+    def _select_cited_sources(
+        cls,
+        answer: str,
+        sources: list[RAGSource],
+    ) -> list[RAGSource]:
+        cited_indexes = {
+            int(match)
+            for match in cls._SOURCE_PATTERN.findall(answer)
+        }
+
+        return [
+            source
+            for source in sources
+            if source.source_index in cited_indexes
+        ]
