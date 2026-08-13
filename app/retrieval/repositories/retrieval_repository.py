@@ -15,6 +15,7 @@ class RetrievalRepository:
         self,
         query_embedding: list[float],
         top_k: int,
+        min_similarity: float,
     ) -> Sequence[Row]:
         distance = DocumentChunk.embedding.cosine_distance(
             query_embedding,
@@ -34,6 +35,7 @@ class RetrievalRepository:
             )
             .where(
                 DocumentChunk.embedding.is_not(None),
+                (1 - distance) >= min_similarity,
             )
             .order_by(distance)
             .limit(top_k)
