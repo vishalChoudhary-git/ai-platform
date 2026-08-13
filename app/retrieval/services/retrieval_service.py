@@ -28,6 +28,7 @@ class RetrievalService:
         rows = await self.repository.similarity_search(
             query_embedding=query_embedding,
             top_k=request.top_k,
+            min_similarity=request.min_similarity,
         )
 
         results = [
