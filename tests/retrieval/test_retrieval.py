@@ -22,10 +22,17 @@ class FakeRetrievalRepository:
         self.rows = rows
         self.query_embedding = None
         self.top_k = None
+        self.min_similarity = None
 
-    async def similarity_search(self, query_embedding, top_k):
+    async def similarity_search(
+        self,
+        query_embedding,
+        top_k,
+        min_similarity,
+    ):
         self.query_embedding = query_embedding
         self.top_k = top_k
+        self.min_similarity = min_similarity
         return self.rows
 
 
@@ -38,6 +45,17 @@ def test_retrieval_request_strips_query():
     request = RetrievalRequest(query="  revenue  ")
 
     assert request.query == "revenue"
+
+
+def test_retrieval_request_defaults_similarity_threshold():
+    request = RetrievalRequest(query="revenue")
+
+    assert request.min_similarity == 0.3
+
+
+def test_retrieval_request_rejects_invalid_similarity_threshold():
+    with pytest.raises(ValueError):
+        RetrievalRequest(query="revenue", min_similarity=1.1)
 
 
 def test_retrieval_service_embeds_query_and_maps_results():
@@ -68,6 +86,7 @@ def test_retrieval_service_embeds_query_and_maps_results():
     assert embedding_provider.queries == ["revenue"]
     assert repository.query_embedding == [0.1, 0.2, 0.3]
     assert repository.top_k == 5
+    assert repository.min_similarity == 0.3
     assert len(response.results) == 1
     assert response.results[0].chunk_id == chunk_id
     assert response.results[0].document_id == document_id
