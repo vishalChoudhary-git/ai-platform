@@ -4,18 +4,17 @@ from app.core.db.session import async_session_factory
 from app.retrieval.factory import create_retrieval_service
 
 
-QUERY = "What is the hotel reimbursement limit?"
+QUERY = "What is Alex Morgan's professional experience?"
 
 
 async def main() -> None:
     async with async_session_factory() as session:
         service = create_retrieval_service(session)
 
-        results = await service.hybrid_search(
+        results = await service.retrieve(
             query=QUERY,
-            top_k=5,
-            vector_top_k=10,
-            keyword_top_k=10,
+            candidate_top_k=20,
+            final_top_k=5,
             min_similarity=0.3,
         )
 
@@ -26,6 +25,8 @@ async def main() -> None:
             print(f"vector_rank: {result.vector_rank}")
             print(f"keyword_rank: {result.keyword_rank}")
             print(f"rrf_score: {result.rrf_score}")
+            print(f"rerank_score: {result.rerank_score}")
+            print(f"rerank_rank: {result.rerank_rank}")
             print(result.text)
 
 
