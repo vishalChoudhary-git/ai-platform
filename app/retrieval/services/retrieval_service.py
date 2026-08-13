@@ -96,25 +96,25 @@ class RetrievalService:
     ) -> list[RetrievedChunk]:
         candidates: dict[UUID, RetrievedChunk] = {}
 
-        for result in vector_results:
-            result.rrf_score = 1 / (self.RRF_K + result.vector_rank)
+        for rank, result in enumerate(vector_results, start=1):
+            result.vector_rank = rank
+            result.rrf_score = 1 / (self.RRF_K + rank)
             candidates[result.chunk_id] = result
 
-        for result in keyword_results:
+        for rank, result in enumerate(keyword_results, start=1):
             existing = candidates.get(result.chunk_id)
 
             if existing is None:
-                result.rrf_score = 1 / (
-                    self.RRF_K + result.keyword_rank
-                )
+                result.keyword_rank = rank
+                result.rrf_score = 1 / (self.RRF_K + rank)
                 candidates[result.chunk_id] = result
                 continue
 
-            existing.keyword_rank = result.keyword_rank
+            existing.keyword_rank = rank
             existing.keyword_score = result.keyword_score
             existing.rrf_score = (
                 (existing.rrf_score or 0.0)
-                + 1 / (self.RRF_K + result.keyword_rank)
+                + 1 / (self.RRF_K + rank)
             )
 
         return sorted(
