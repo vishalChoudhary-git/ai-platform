@@ -1,0 +1,6 @@
+{
+  "query": "What is the hotel reimbursement limit?",
+  "expected_document_id": "465c96af-be46-4edf-8427-e2d6535e082c",
+  "expected_chunk_indexes": [2],
+  "expected_terms": ["hotel", "reimbursement", "180"]
+}
