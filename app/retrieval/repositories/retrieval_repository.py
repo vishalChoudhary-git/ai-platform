@@ -1,4 +1,7 @@
+from collections.abc import Sequence
+
 from sqlalchemy import select
+from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.documents.models import DocumentChunk
@@ -12,7 +15,7 @@ class RetrievalRepository:
         self,
         query_embedding: list[float],
         top_k: int,
-    ):
+    ) -> Sequence[Row]:
         distance = DocumentChunk.embedding.cosine_distance(
             query_embedding,
         )
