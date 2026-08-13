@@ -1,9 +1,10 @@
+import asyncio
+import json
+import urllib.error
+import urllib.request
 from typing import Any
 
-import httpx
-
-from app.core.config import app_settings
-from app.retrieval.reranking import Reranker
+from app.retrieval.reranker_nemotron import Reranker
 from app.retrieval.schemas import RetrievedChunk
 
 
@@ -47,15 +48,7 @@ class OpenRouterNemotronReranker(Reranker):
             "X-OpenRouter-Title": self.site_name,
         }
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(
-                self.ENDPOINT,
-                headers=headers,
-                json=payload,
-            )
-
-        response.raise_for_status()
-        data: dict[str, Any] = response.json()
+        data = await asyncio.to_thread(self._request, payload, headers)
 
         reranked: list[RetrievedChunk] = []
         for rank, item in enumerate(data.get("results", []), start=1):
@@ -66,3 +59,24 @@ class OpenRouterNemotronReranker(Reranker):
             reranked.append(candidate)
 
         return reranked
+
+    def _request(
+        self,
+        payload: dict[str, Any],
+        headers: dict[str, str],
+    ) -> dict[str, Any]:
+        request = urllib.request.Request(
+            self.ENDPOINT,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            raise RuntimeError(
+                f"OpenRouter reranker request failed: {exc.code} {body}"
+            ) from exc
