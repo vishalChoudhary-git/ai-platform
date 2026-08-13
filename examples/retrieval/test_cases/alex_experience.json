@@ -1,0 +1,6 @@
+{
+  "query": "What is Alex Morgan's professional experience?",
+  "expected_document_id": "8dc922bb-f831-412f-b5ba-d54fc8ffb36a",
+  "expected_chunk_indexes": [1, 2],
+  "expected_terms": ["6 years", "experience", "REST APIs", "Redis", "CI/CD"]
+}
