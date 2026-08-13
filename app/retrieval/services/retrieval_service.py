@@ -1,17 +1,14 @@
+from collections.abc import Sequence
+
 from ai_document_intelligence.embeddings import EmbeddingProvider
 
 from app.retrieval.repositories import RetrievalRepository
-from app.retrieval.schemas import (
-    KeywordSearchRequest,
-    KeywordSearchResponse,
-    KeywordSearchResult,
-    RetrievalRequest,
-    RetrievalResponse,
-    RetrievedChunk,
-)
+from app.retrieval.schemas import RetrievedChunk
 
 
 class RetrievalService:
+    RRF_K = 60
+
     def __init__(
         self,
         repository: RetrievalRepository,
@@ -20,59 +17,114 @@ class RetrievalService:
         self.repository = repository
         self.embedding_provider = embedding_provider
 
-    async def retrieve(
+    async def semantic_search(
         self,
-        request: RetrievalRequest,
-    ) -> RetrievalResponse:
-        query_embedding = self.embedding_provider.embed(
-            request.query,
-        )
+        query: str,
+        top_k: int = 10,
+        min_similarity: float = 0.3,
+    ) -> list[RetrievedChunk]:
+        query = query.strip()
+        if not query:
+            raise ValueError("query must not be empty")
+
+        query_embedding = self.embedding_provider.embed(query)
 
         rows = await self.repository.similarity_search(
             query_embedding=query_embedding,
-            top_k=request.top_k,
-            min_similarity=request.min_similarity,
+            top_k=top_k,
+            min_similarity=min_similarity,
         )
 
-        results = [
-            RetrievedChunk(
-                chunk_id=row.id,
-                document_id=row.document_id,
-                text=row.text,
-                page_number=row.page_number,
-                chunk_index=row.chunk_index,
-                metadata=row.metadata_,
-                similarity=float(row.similarity),
-            )
+        return [
+            self._map_row(row)
             for row in rows
         ]
-
-        return RetrievalResponse(
-            results=results,
-        )
 
     async def keyword_search(
         self,
-        request: KeywordSearchRequest,
-    ) -> KeywordSearchResponse:
+        query: str,
+        top_k: int = 10,
+    ) -> list[RetrievedChunk]:
+        query = query.strip()
+        if not query:
+            raise ValueError("query must not be empty")
+
         rows = await self.repository.keyword_search(
-            query=request.query,
-            top_k=request.top_k,
+            query=query,
+            top_k=top_k,
         )
 
-        results = [
-            KeywordSearchResult(
-                chunk_id=row.id,
-                document_id=row.document_id,
-                text=row.text,
-                page_number=row.page_number,
-                chunk_index=row.chunk_index,
-                metadata=row.metadata_,
-                score=float(row.score),
-            )
+        return [
+            self._map_row(row)
             for row in rows
         ]
 
-        return KeywordSearchResponse(
-            results=results,
+    async def hybrid_search(
+        self,
+        query: str,
+        top_k: int = 5,
+        vector_top_k: int = 10,
+        keyword_top_k: int = 10,
+        min_similarity: float = 0.3,
+    ) -> list[RetrievedChunk]:
+        vector_results = await self.semantic_search(
+            query=query,
+            top_k=vector_top_k,
+            min_similarity=min_similarity,
+        )
+
+        keyword_results = await self.keyword_search(
+            query=query,
+            top_k=keyword_top_k,
+        )
+
+        return self._fuse_with_rrf(
+            vector_results=vector_results,
+            keyword_results=keyword_results,
+            top_k=top_k,
+        )
+
+    def _fuse_with_rrf(
+        self,
+        vector_results: Sequence[RetrievedChunk],
+        keyword_results: Sequence[RetrievedChunk],
+        top_k: int,
+    ) -> list[RetrievedChunk]:
+        candidates: dict = {}
+
+        for rank, result in enumerate(vector_results, start=1):
+            result.vector_rank = rank
+            result.rrf_score = 1 / (self.RRF_K + rank)
+            candidates[result.chunk_id] = result
+
+        for rank, result in enumerate(keyword_results, start=1):
+            existing = candidates.get(result.chunk_id)
+
+            if existing is None:
+                result.keyword_rank = rank
+                result.rrf_score = 1 / (self.RRF_K + rank)
+                candidates[result.chunk_id] = result
+                continue
+
+            existing.keyword_rank = rank
+            existing.rrf_score = (
+                (existing.rrf_score or 0.0)
+                + 1 / (self.RRF_K + rank)
+            )
+
+        return sorted(
+            candidates.values(),
+            key=lambda result: result.rrf_score or 0.0,
+            reverse=True,
+        )[:top_k]
+
+    @staticmethod
+    def _map_row(row) -> RetrievedChunk:
+        return RetrievedChunk(
+            chunk_id=row.id,
+            document_id=row.document_id,
+            text=row.text,
+            page_number=row.page_number,
+            chunk_index=row.chunk_index,
+            metadata=row.metadata_,
         )
