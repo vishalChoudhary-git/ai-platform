@@ -22,7 +22,7 @@ async def main() -> None:
             print(f"chunk_id: {result.chunk_id}")
             print(f"document_id: {result.document_id}")
             print(f"vector_rank: {result.vector_rank}")
-            print(f"vector_similarity: {result.vector_similarity}")
+            print(f"similarity: {result.vector_similarity:.4f}")
             print(result.text)
 
 
