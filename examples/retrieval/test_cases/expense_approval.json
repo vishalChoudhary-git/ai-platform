@@ -1,0 +1,6 @@
+{
+  "query": "Who approves expenses above 2000 dollars?",
+  "expected_document_id": "465c96af-be46-4edf-8427-e2d6535e082c",
+  "expected_chunk_indexes": [4],
+  "expected_terms": ["2000", "director-level approval"]
+}
