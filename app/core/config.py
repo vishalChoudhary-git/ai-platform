@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     openrouter_site_name: str = "AI Platform"
     openrouter_reranker_model: str = "nvidia/llama-nemotron-rerank-vl-1b-v2:free"
     rag_llm_model: str = "gpt-4.1-mini"
+    rag_llm_max_tokens: int
+    rag_llm_temperature: float
 
 
 @lru_cache
