@@ -3,6 +3,7 @@ from uuid import UUID
 
 from ai_document_intelligence.embeddings import EmbeddingProvider
 
+from app.retrieval.reranking import Reranker
 from app.retrieval.repositories import RetrievalRepository
 from app.retrieval.schemas import RetrievedChunk
 
@@ -14,9 +15,11 @@ class RetrievalService:
         self,
         repository: RetrievalRepository,
         embedding_provider: EmbeddingProvider,
+        reranker: Reranker,
     ):
         self.repository = repository
         self.embedding_provider = embedding_provider
+        self.reranker = reranker
 
     async def semantic_search(
         self,
@@ -66,9 +69,9 @@ class RetrievalService:
     async def hybrid_search(
         self,
         query: str,
-        top_k: int = 5,
-        vector_top_k: int = 10,
-        keyword_top_k: int = 10,
+        top_k: int = 20,
+        vector_top_k: int = 20,
+        keyword_top_k: int = 20,
         min_similarity: float = 0.3,
     ) -> list[RetrievedChunk]:
         vector_results = await self.semantic_search(
@@ -86,6 +89,27 @@ class RetrievalService:
             vector_results=vector_results,
             keyword_results=keyword_results,
             top_k=top_k,
+        )
+
+    async def retrieve(
+        self,
+        query: str,
+        candidate_top_k: int = 20,
+        final_top_k: int = 5,
+        min_similarity: float = 0.3,
+    ) -> list[RetrievedChunk]:
+        candidates = await self.hybrid_search(
+            query=query,
+            top_k=candidate_top_k,
+            vector_top_k=candidate_top_k,
+            keyword_top_k=candidate_top_k,
+            min_similarity=min_similarity,
+        )
+
+        return await self.reranker.rerank(
+            query=query,
+            candidates=candidates,
+            top_k=final_top_k,
         )
 
     def _fuse_with_rrf(
