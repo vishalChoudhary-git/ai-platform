@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.retrieval.schemas import RetrievalRequest
+from app.retrieval.schemas import KeywordSearchRequest, RetrievalRequest
 from app.retrieval.services import RetrievalService
 
 
@@ -23,6 +23,8 @@ class FakeRetrievalRepository:
         self.query_embedding = None
         self.top_k = None
         self.min_similarity = None
+        self.keyword_query = None
+        self.keyword_top_k = None
 
     async def similarity_search(
         self,
@@ -33,6 +35,11 @@ class FakeRetrievalRepository:
         self.query_embedding = query_embedding
         self.top_k = top_k
         self.min_similarity = min_similarity
+        return self.rows
+
+    async def keyword_search(self, query, top_k):
+        self.keyword_query = query
+        self.keyword_top_k = top_k
         return self.rows
 
 
@@ -92,3 +99,39 @@ def test_retrieval_service_embeds_query_and_maps_results():
     assert response.results[0].document_id == document_id
     assert response.results[0].text == "Revenue was 180 million dollars."
     assert response.results[0].similarity == 0.82
+
+
+def test_keyword_search_does_not_use_embeddings():
+    chunk_id = uuid4()
+    document_id = uuid4()
+    rows = [
+        SimpleNamespace(
+            id=chunk_id,
+            document_id=document_id,
+            text="Hotel reimbursement is capped at 180 dollars per night.",
+            page_number=1,
+            chunk_index=2,
+            metadata_={"sdk_chunk_id": "doc-chunk-2"},
+            score=0.91,
+        )
+    ]
+
+    repository = FakeRetrievalRepository(rows)
+    embedding_provider = FakeEmbeddingProvider()
+    service = RetrievalService(repository, embedding_provider)
+
+    response = asyncio.run(
+        service.keyword_search(
+            KeywordSearchRequest(
+                query="  hotel reimbursement  ",
+                top_k=3,
+            )
+        )
+    )
+
+    assert embedding_provider.queries == []
+    assert repository.keyword_query == "hotel reimbursement"
+    assert repository.keyword_top_k == 3
+    assert len(response.results) == 1
+    assert response.results[0].chunk_id == chunk_id
+    assert response.results[0].score == 0.91
