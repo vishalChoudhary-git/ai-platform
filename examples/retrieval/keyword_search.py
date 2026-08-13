@@ -21,6 +21,7 @@ async def main() -> None:
             print(f"chunk_id: {result.chunk_id}")
             print(f"document_id: {result.document_id}")
             print(f"keyword_rank: {result.keyword_rank}")
+            print(f"keyword_score: {result.keyword_score}")
             print(result.text)
 
 
