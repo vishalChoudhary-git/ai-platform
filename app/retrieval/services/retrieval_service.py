@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from uuid import UUID
 
 from ai_document_intelligence.embeddings import EmbeddingProvider
 
@@ -93,7 +94,7 @@ class RetrievalService:
         keyword_results: Sequence[RetrievedChunk],
         top_k: int,
     ) -> list[RetrievedChunk]:
-        candidates: dict = {}
+        candidates: dict[UUID, RetrievedChunk] = {}
 
         for result in vector_results:
             result.rrf_score = 1 / (self.RRF_K + result.vector_rank)
