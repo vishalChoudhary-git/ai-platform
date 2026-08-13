@@ -3,8 +3,8 @@ from uuid import UUID
 
 from ai_document_intelligence.embeddings import EmbeddingProvider
 
-from app.retrieval.reranking import Reranker
 from app.retrieval.repositories import RetrievalRepository
+from app.retrieval.reranking import Reranker
 from app.retrieval.schemas import RetrievedChunk
 
 
@@ -136,10 +136,7 @@ class RetrievalService:
 
             existing.keyword_rank = rank
             existing.keyword_score = result.keyword_score
-            existing.rrf_score = (
-                (existing.rrf_score or 0.0)
-                + 1 / (self.RRF_K + rank)
-            )
+            existing.rrf_score = (existing.rrf_score or 0.0) + 1 / (self.RRF_K + rank)
 
         return sorted(
             candidates.values(),

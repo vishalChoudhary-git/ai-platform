@@ -1,5 +1,3 @@
-import os
-
 from ai_document_intelligence.embeddings import (
     EmbeddingProvider,
     OpenAIEmbeddingProvider,
@@ -8,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import app_settings
 from app.retrieval.openrouter_nemotron_reranker import OpenRouterNemotronReranker
-from app.retrieval.reranking import Reranker
 from app.retrieval.repositories import RetrievalRepository
+from app.retrieval.reranking import Reranker
 from app.retrieval.services import RetrievalService
 
 
@@ -20,24 +18,11 @@ def create_embedding_provider() -> EmbeddingProvider:
 
 
 def create_reranker() -> Reranker:
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENROUTER_API_KEY is required")
-
     return OpenRouterNemotronReranker(
-        api_key=api_key,
-        model=os.getenv(
-            "OPENROUTER_RERANKER_MODEL",
-            "nvidia/llama-nemotron-rerank-vl-1b-v2:free",
-        ),
-        site_url=os.getenv(
-            "OPENROUTER_SITE_URL",
-            "https://github.com/vishalChoudhary-git/ai-platform",
-        ),
-        site_name=os.getenv(
-            "OPENROUTER_SITE_NAME",
-            "AI Platform",
-        ),
+        api_key=app_settings.openrouter_api_key,
+        model=app_settings.openrouter_reranker_model,
+        site_url=app_settings.openrouter_site_url,
+        site_name=app_settings.openrouter_site_name,
     )
 
 

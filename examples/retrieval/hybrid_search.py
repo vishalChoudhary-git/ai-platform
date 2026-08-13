@@ -3,7 +3,6 @@ import asyncio
 from app.core.db.session import async_session_factory
 from app.retrieval.factory import create_retrieval_service
 
-
 QUERY = "What is Alex Morgan's professional experience?"
 
 

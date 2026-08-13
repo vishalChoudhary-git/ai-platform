@@ -4,7 +4,6 @@ from uuid import uuid4
 
 import pytest
 
-from app.retrieval.schemas import RetrievedChunk
 from app.retrieval.services import RetrievalService
 
 
