@@ -4,6 +4,7 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+from app.retrieval.reranked_chunk import RerankedRetrievedChunk
 from app.retrieval.reranking import Reranker
 from app.retrieval.schemas import RetrievedChunk
 
@@ -30,7 +31,7 @@ class OpenRouterNemotronReranker(Reranker):
         query: str,
         candidates: list[RetrievedChunk],
         top_k: int,
-    ) -> list[RetrievedChunk]:
+    ) -> list[RerankedRetrievedChunk]:
         if not candidates:
             return []
 
@@ -50,13 +51,16 @@ class OpenRouterNemotronReranker(Reranker):
 
         data = await asyncio.to_thread(self._request, payload, headers)
 
-        reranked: list[RetrievedChunk] = []
+        reranked: list[RerankedRetrievedChunk] = []
         for rank, item in enumerate(data.get("results", []), start=1):
             index = int(item["index"])
             candidate = candidates[index]
-            candidate.rerank_score = float(item["relevance_score"])
-            candidate.rerank_rank = rank
-            reranked.append(candidate)
+            reranked_candidate = RerankedRetrievedChunk(
+                **candidate.model_dump(),
+                rerank_score=float(item["relevance_score"]),
+                rerank_rank=rank,
+            )
+            reranked.append(reranked_candidate)
 
         return reranked
 
