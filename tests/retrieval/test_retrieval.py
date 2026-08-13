@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.retrieval.schemas import KeywordSearchRequest, RetrievalRequest
+from app.retrieval.schemas import RetrievedChunk
 from app.retrieval.services import RetrievalService
 
 
@@ -18,10 +18,11 @@ class FakeEmbeddingProvider:
 
 
 class FakeRetrievalRepository:
-    def __init__(self, rows):
-        self.rows = rows
+    def __init__(self, vector_rows=None, keyword_rows=None):
+        self.vector_rows = vector_rows or []
+        self.keyword_rows = keyword_rows or []
         self.query_embedding = None
-        self.top_k = None
+        self.vector_top_k = None
         self.min_similarity = None
         self.keyword_query = None
         self.keyword_top_k = None
@@ -33,105 +34,144 @@ class FakeRetrievalRepository:
         min_similarity,
     ):
         self.query_embedding = query_embedding
-        self.top_k = top_k
+        self.vector_top_k = top_k
         self.min_similarity = min_similarity
-        return self.rows
+        return self.vector_rows
 
     async def keyword_search(self, query, top_k):
         self.keyword_query = query
         self.keyword_top_k = top_k
-        return self.rows
+        return self.keyword_rows
 
 
-def test_retrieval_request_rejects_blank_query():
-    with pytest.raises(ValueError):
-        RetrievalRequest(query="   ")
+def make_row(
+    *,
+    chunk_id=None,
+    document_id=None,
+    text="Example chunk",
+    similarity=0.82,
+    score=0.91,
+):
+    return SimpleNamespace(
+        id=chunk_id or uuid4(),
+        document_id=document_id or uuid4(),
+        text=text,
+        page_number=1,
+        chunk_index=0,
+        metadata_={},
+        similarity=similarity,
+        score=score,
+    )
 
 
-def test_retrieval_request_strips_query():
-    request = RetrievalRequest(query="  revenue  ")
-
-    assert request.query == "revenue"
-
-
-def test_retrieval_request_defaults_similarity_threshold():
-    request = RetrievalRequest(query="revenue")
-
-    assert request.min_similarity == 0.3
-
-
-def test_retrieval_request_rejects_invalid_similarity_threshold():
-    with pytest.raises(ValueError):
-        RetrievalRequest(query="revenue", min_similarity=1.1)
-
-
-def test_retrieval_service_embeds_query_and_maps_results():
-    chunk_id = uuid4()
-    document_id = uuid4()
-    rows = [
-        SimpleNamespace(
-            id=chunk_id,
-            document_id=document_id,
-            text="Revenue was 180 million dollars.",
-            page_number=2,
-            chunk_index=3,
-            metadata_={"sdk_chunk_id": "doc-chunk-3"},
-            similarity=0.82,
-        )
-    ]
-
-    repository = FakeRetrievalRepository(rows)
+def test_semantic_search_embeds_query_and_applies_configuration():
+    row = make_row(similarity=0.82)
+    repository = FakeRetrievalRepository(vector_rows=[row])
     embedding_provider = FakeEmbeddingProvider()
     service = RetrievalService(repository, embedding_provider)
 
-    response = asyncio.run(
-        service.retrieve(
-            RetrievalRequest(query="  revenue  ", top_k=5),
+    results = asyncio.run(
+        service.semantic_search(
+            query="  revenue  ",
+            top_k=5,
+            min_similarity=0.3,
         )
     )
 
     assert embedding_provider.queries == ["revenue"]
     assert repository.query_embedding == [0.1, 0.2, 0.3]
-    assert repository.top_k == 5
+    assert repository.vector_top_k == 5
     assert repository.min_similarity == 0.3
-    assert len(response.results) == 1
-    assert response.results[0].chunk_id == chunk_id
-    assert response.results[0].document_id == document_id
-    assert response.results[0].text == "Revenue was 180 million dollars."
-    assert response.results[0].similarity == 0.82
+    assert results[0].chunk_id == row.id
+    assert results[0].vector_rank == 1
+    assert results[0].vector_similarity == 0.82
 
 
 def test_keyword_search_does_not_use_embeddings():
-    chunk_id = uuid4()
-    document_id = uuid4()
-    rows = [
-        SimpleNamespace(
-            id=chunk_id,
-            document_id=document_id,
-            text="Hotel reimbursement is capped at 180 dollars per night.",
-            page_number=1,
-            chunk_index=2,
-            metadata_={"sdk_chunk_id": "doc-chunk-2"},
-            score=0.91,
-        )
-    ]
-
-    repository = FakeRetrievalRepository(rows)
+    row = make_row(score=0.91)
+    repository = FakeRetrievalRepository(keyword_rows=[row])
     embedding_provider = FakeEmbeddingProvider()
     service = RetrievalService(repository, embedding_provider)
 
-    response = asyncio.run(
+    results = asyncio.run(
         service.keyword_search(
-            KeywordSearchRequest(
-                query="  hotel reimbursement  ",
-                top_k=3,
-            )
+            query="  hotel reimbursement  ",
+            top_k=3,
         )
     )
 
     assert embedding_provider.queries == []
     assert repository.keyword_query == "hotel reimbursement"
     assert repository.keyword_top_k == 3
-    assert len(response.results) == 1
-    assert response.results[0].chunk_id == chunk_id
-    assert response.results[0].score == 0.91
+    assert results[0].chunk_id == row.id
+    assert results[0].keyword_rank == 1
+    assert results[0].keyword_score == 0.91
+
+
+def test_hybrid_search_combines_rankings_with_rrf():
+    shared_chunk_id = uuid4()
+    vector_only_id = uuid4()
+    keyword_only_id = uuid4()
+
+    vector_shared = make_row(
+        chunk_id=shared_chunk_id,
+        text="Shared result",
+        similarity=0.9,
+    )
+    vector_only = make_row(
+        chunk_id=vector_only_id,
+        text="Vector result",
+        similarity=0.8,
+    )
+    keyword_shared = make_row(
+        chunk_id=shared_chunk_id,
+        text="Shared result",
+        score=0.9,
+    )
+    keyword_only = make_row(
+        chunk_id=keyword_only_id,
+        text="Keyword result",
+        score=0.8,
+    )
+
+    repository = FakeRetrievalRepository(
+        vector_rows=[vector_shared, vector_only],
+        keyword_rows=[keyword_shared, keyword_only],
+    )
+    service = RetrievalService(
+        repository,
+        FakeEmbeddingProvider(),
+    )
+
+    results = asyncio.run(
+        service.hybrid_search(
+            query="hotel reimbursement",
+            top_k=3,
+            vector_top_k=2,
+            keyword_top_k=2,
+        )
+    )
+
+    assert len(results) == 3
+    assert results[0].chunk_id == shared_chunk_id
+    assert results[0].vector_rank == 1
+    assert results[0].keyword_rank == 1
+    assert results[0].rrf_score > results[1].rrf_score
+    assert results[1].chunk_id == vector_only_id
+
+
+def test_search_rejects_blank_query():
+    service = RetrievalService(
+        FakeRetrievalRepository(),
+        FakeEmbeddingProvider(),
+    )
+
+    with pytest.raises(ValueError, match="query must not be empty"):
+        asyncio.run(service.semantic_search("   "))
+
+    with pytest.raises(ValueError, match="query must not be empty"):
+        asyncio.run(service.keyword_search("   "))
+
+
+def test_rrf_uses_expected_constant():
+    assert RetrievalService.RRF_K == 60
