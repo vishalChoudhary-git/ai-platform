@@ -1,3 +1,4 @@
+import re
 from collections.abc import Sequence
 
 from sqlalchemy import func, select
@@ -45,14 +46,35 @@ class RetrievalRepository:
 
         return result.all()
 
+    @staticmethod
+    def _build_keyword_query(query: str) -> str:
+        terms = re.findall(r"\w+", query)
+        return " | ".join(terms)
+
     async def keyword_search(
         self,
         query: str,
         top_k: int,
     ) -> Sequence[Row]:
-        search_vector = func.to_tsvector("english", DocumentChunk.text)
-        search_query = func.plainto_tsquery("english", query)
-        score = func.ts_rank(search_vector, search_query).label("score")
+        tsquery = self._build_keyword_query(query)
+
+        if not tsquery:
+            return []
+
+        search_vector = func.to_tsvector(
+            "english",
+            DocumentChunk.text,
+        )
+
+        search_query = func.to_tsquery(
+            "english",
+            tsquery,
+        )
+
+        score = func.ts_rank(
+            search_vector,
+            search_query,
+        ).label("score")
 
         statement = (
             select(
@@ -64,7 +86,9 @@ class RetrievalRepository:
                 DocumentChunk.metadata_,
                 score,
             )
-            .where(search_vector.op("@@")(search_query))
+            .where(
+                search_vector.op("@@")(search_query),
+            )
             .order_by(score.desc())
             .limit(top_k)
         )
