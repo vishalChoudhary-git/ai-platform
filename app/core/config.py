@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     llama_cloud_api_key: str
     tier: str
     openai_api_key: str
+    openrouter_api_key: str
+    openrouter_site_url: str = "https://github.com/vishalChoudhary-git/ai-platform"
+    openrouter_site_name: str = "AI Platform"
+    openrouter_reranker_model: str = "nvidia/llama-nemotron-rerank-vl-1b-v2:free"
 
 
 @lru_cache
