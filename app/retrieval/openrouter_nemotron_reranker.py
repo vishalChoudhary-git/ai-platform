@@ -4,7 +4,7 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-from app.retrieval.reranker_nemotron import Reranker
+from app.retrieval.reranking import Reranker
 from app.retrieval.schemas import RetrievedChunk
 
 
