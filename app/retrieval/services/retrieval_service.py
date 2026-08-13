@@ -23,10 +23,7 @@ class RetrievalService:
         top_k: int = 10,
         min_similarity: float = 0.3,
     ) -> list[RetrievedChunk]:
-        query = query.strip()
-        if not query:
-            raise ValueError("query must not be empty")
-
+        query = self._validate_query(query)
         query_embedding = self.embedding_provider.embed(query)
 
         rows = await self.repository.similarity_search(
@@ -35,29 +32,35 @@ class RetrievalService:
             min_similarity=min_similarity,
         )
 
-        return [
-            self._map_row(row)
-            for row in rows
-        ]
+        results = []
+        for rank, row in enumerate(rows, start=1):
+            result = self._map_row(row)
+            result.vector_similarity = float(row.similarity)
+            result.vector_rank = rank
+            results.append(result)
+
+        return results
 
     async def keyword_search(
         self,
         query: str,
         top_k: int = 10,
     ) -> list[RetrievedChunk]:
-        query = query.strip()
-        if not query:
-            raise ValueError("query must not be empty")
+        query = self._validate_query(query)
 
         rows = await self.repository.keyword_search(
             query=query,
             top_k=top_k,
         )
 
-        return [
-            self._map_row(row)
-            for row in rows
-        ]
+        results = []
+        for rank, row in enumerate(rows, start=1):
+            result = self._map_row(row)
+            result.keyword_score = float(row.score)
+            result.keyword_rank = rank
+            results.append(result)
+
+        return results
 
     async def hybrid_search(
         self,
@@ -92,24 +95,25 @@ class RetrievalService:
     ) -> list[RetrievedChunk]:
         candidates: dict = {}
 
-        for rank, result in enumerate(vector_results, start=1):
-            result.vector_rank = rank
-            result.rrf_score = 1 / (self.RRF_K + rank)
+        for result in vector_results:
+            result.rrf_score = 1 / (self.RRF_K + result.vector_rank)
             candidates[result.chunk_id] = result
 
-        for rank, result in enumerate(keyword_results, start=1):
+        for result in keyword_results:
             existing = candidates.get(result.chunk_id)
 
             if existing is None:
-                result.keyword_rank = rank
-                result.rrf_score = 1 / (self.RRF_K + rank)
+                result.rrf_score = 1 / (
+                    self.RRF_K + result.keyword_rank
+                )
                 candidates[result.chunk_id] = result
                 continue
 
-            existing.keyword_rank = rank
+            existing.keyword_rank = result.keyword_rank
+            existing.keyword_score = result.keyword_score
             existing.rrf_score = (
                 (existing.rrf_score or 0.0)
-                + 1 / (self.RRF_K + rank)
+                + 1 / (self.RRF_K + result.keyword_rank)
             )
 
         return sorted(
@@ -117,6 +121,13 @@ class RetrievalService:
             key=lambda result: result.rrf_score or 0.0,
             reverse=True,
         )[:top_k]
+
+    @staticmethod
+    def _validate_query(query: str) -> str:
+        query = query.strip()
+        if not query:
+            raise ValueError("query must not be empty")
+        return query
 
     @staticmethod
     def _map_row(row) -> RetrievedChunk:
