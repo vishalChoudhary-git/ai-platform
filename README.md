@@ -1,4 +1,45 @@
-Built and published an open-source Python package for intelligent document parsing with support for Docling, table extraction, metadata generation, and semantic chunking.
+## Technology Stack
+
+### Backend
+
+- Python
+- FastAPI
+- Pydantic
+- SQLAlchemy
+
+### Document Intelligence
+
+- AI Document Intelligence SDK
+- Document parsing and preprocessing
+- Chunking
+- Embeddings
+
+### Storage
+
+- PostgreSQL
+- pgvector for vector storage and semantic search
+- Redis
+- Cloudflare R2 for document/object storage
+
+### AI / LLM
+
+- OpenAI Embeddings for document and query embeddings
+- OpenAI LLM for grounded RAG answer generation
+- OpenRouter as the reranking API gateway
+- NVIDIA `nvidia/llama-nemotron-rerank-vl-1b-v2:free` for reranking
+- LangGraph for the planned agent runtime
+
+### Retrieval
+
+- pgvector semantic vector search
+- PostgreSQL keyword/full-text search
+- Reciprocal Rank Fusion (RRF)
+- NVIDIA Nemotron reranking
+
+### Infrastructure
+
+- Docker
+- GitHub Actions
 
 ## Platform Architecture
 
@@ -65,6 +106,21 @@ The current platform includes:
 - NVIDIA Nemotron reranking through OpenRouter
 - grounded RAG with source attribution
 - plugin-agnostic Knowledge API
+
+### Current RAG Configuration
+
+```text
+LLM: OpenAI
+RAG_LLM_MAX_TOKENS: 500
+RAG_LLM_TEMPERATURE: 0.2
+
+Candidate retrieval: 20
+Final retrieved chunks: 5
+Minimum semantic similarity: 0.30
+
+Reranker:
+nvidia/llama-nemotron-rerank-vl-1b-v2:free
+```
 
 Detailed documentation:
 
