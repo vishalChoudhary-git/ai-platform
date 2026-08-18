@@ -3,7 +3,16 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    Date,
+    DateTime,
+    ForeignKey,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,13 +30,21 @@ from .enums import (
 class Expense(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "expenses"
 
-    expense_id: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)
+    expense_id: Mapped[str] = mapped_column(
+        String(32),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
     employee_name: Mapped[str] = mapped_column(String(255), nullable=False)
     employee_email: Mapped[str] = mapped_column(String(320), nullable=False)
     manager_email: Mapped[str] = mapped_column(String(320), nullable=False)
     category: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    amount: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+    amount: Mapped[Decimal | None] = mapped_column(
+        Numeric(14, 2),
+        nullable=True,
+    )
     currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     expense_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[ExpenseStatus] = mapped_column(
@@ -98,7 +115,11 @@ class ExpenseDocument(UUIDMixin, TimestampMixin, Base):
     expense: Mapped[Expense] = relationship(back_populates="documents")
 
     __table_args__ = (
-        UniqueConstraint("expense_id", "document_id", name="uq_expense_document"),
+        UniqueConstraint(
+            "expense_id",
+            "document_id",
+            name="uq_expense_document",
+        ),
     )
 
 
