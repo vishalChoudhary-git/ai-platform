@@ -1,0 +1,104 @@
+{
+  "info": {
+    "name": "Expense Resolution API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "expense_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create hotel expense",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const body = pm.response.json();",
+              "pm.collectionVariables.set('expense_id', body.expense_id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "expense",
+              "type": "text",
+              "value": "{\n  \"employee_name\": \"Vishal Choudhary\",\n  \"employee_email\": \"vishal@example.com\",\n  \"manager_email\": \"manager@example.com\",\n  \"category\": \"hotel\",\n  \"description\": \"Hotel stay during Mumbai business trip\",\n  \"amount\": 12000,\n  \"currency\": \"INR\",\n  \"expense_date\": \"2026-08-15\"\n}"
+            },
+            {
+              "key": "files",
+              "type": "file",
+              "src": "hotel-receipt.pdf"
+            }
+          ]
+        },
+        "url": "{{base_url}}/plugins/expenses"
+      }
+    },
+    {
+      "name": "2. Append corrected receipt",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "files",
+              "type": "file",
+              "src": "corrected-hotel-receipt.pdf"
+            }
+          ]
+        },
+        "url": "{{base_url}}/plugins/expenses?expense_id={{expense_id}}"
+      }
+    },
+    {
+      "name": "3. Create multi-document travel expense",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "expense",
+              "type": "text",
+              "value": "{\n  \"employee_name\": \"Vishal Choudhary\",\n  \"employee_email\": \"vishal@example.com\",\n  \"manager_email\": \"manager@example.com\",\n  \"category\": \"travel\",\n  \"description\": \"Mumbai business trip\",\n  \"amount\": 18500,\n  \"currency\": \"INR\",\n  \"expense_date\": \"2026-08-15\"\n}"
+            },
+            {
+              "key": "files",
+              "type": "file",
+              "src": "hotel-receipt.pdf"
+            },
+            {
+              "key": "files",
+              "type": "file",
+              "src": "meal-receipt.pdf"
+            },
+            {
+              "key": "files",
+              "type": "file",
+              "src": "taxi-receipt.pdf"
+            }
+          ]
+        },
+        "url": "{{base_url}}/plugins/expenses"
+      }
+    }
+  ]
+}
