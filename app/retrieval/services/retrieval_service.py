@@ -15,7 +15,7 @@ class RetrievalService:
         self,
         repository: RetrievalRepository,
         embedding_provider: EmbeddingProvider,
-        reranker: Reranker,
+        reranker: Reranker | None = None,
     ):
         self.repository = repository
         self.embedding_provider = embedding_provider
@@ -105,6 +105,9 @@ class RetrievalService:
             keyword_top_k=candidate_top_k,
             min_similarity=min_similarity,
         )
+
+        if self.reranker is None:
+            return candidates[:final_top_k]
 
         return await self.reranker.rerank(
             query=query,
