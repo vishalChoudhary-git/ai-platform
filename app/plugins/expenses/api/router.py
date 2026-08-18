@@ -1,11 +1,25 @@
 import json
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
+    status,
+)
 
 from app.features.documents.api.dependencies import get_ingestion_service
 from app.features.documents.services import IngestionService
-from app.plugins.expenses.schemas import ExpenseCreateData, ExpenseResponse, ExpenseUpdateData
+from app.plugins.expenses.schemas import (
+    ExpenseCreateData,
+    ExpenseResponse,
+    ExpenseUpdateData,
+)
 from app.plugins.expenses.services import ExpenseService
 
 from .dependencies import get_expense_service
