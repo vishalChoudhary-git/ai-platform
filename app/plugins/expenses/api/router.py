@@ -1,11 +1,11 @@
 import json
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile, status
 
 from app.features.documents.api.dependencies import get_ingestion_service
 from app.features.documents.services import IngestionService
-from app.plugins.expenses.schemas import ExpenseCreateData, ExpenseResponse
+from app.plugins.expenses.schemas import ExpenseCreateData, ExpenseResponse, ExpenseUpdateData
 from app.plugins.expenses.services import ExpenseService
 
 from .dependencies import get_expense_service
@@ -23,25 +23,36 @@ router = APIRouter(
 )
 async def submit_expense(
     background_tasks: BackgroundTasks,
-    expense_id: Annotated[str | None, Form()] = None,
+    expense_id: Annotated[str | None, Query()] = None,
     expense: Annotated[str | None, Form()] = None,
     files: Annotated[list[UploadFile], File()] = [],
     service: ExpenseService = Depends(get_expense_service),
     ingestion_service: IngestionService = Depends(get_ingestion_service),
 ) -> ExpenseResponse:
-    data = ExpenseCreateData.model_validate(json.loads(expense)) if expense else None
+    try:
+        data = json.loads(expense) if expense else None
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Expense form field must contain valid JSON.",
+        ) from exc
 
     if expense_id:
+        update_data = ExpenseUpdateData.model_validate(data) if data else None
         result, document_ids = await service.append(
             expense_id=expense_id,
             files=files,
-            data=data,
+            data=update_data,
         )
     else:
         if data is None:
-            raise ValueError("expense form field is required when creating an expense")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Expense form field is required when creating an expense.",
+            )
+        create_data = ExpenseCreateData.model_validate(data)
         result, document_ids = await service.create(
-            data=data,
+            data=create_data,
             files=files,
         )
 
