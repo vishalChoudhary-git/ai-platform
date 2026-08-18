@@ -1,4 +1,4 @@
-import json
+from collections.abc import Sequence
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException, UploadFile, status
@@ -7,13 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.ingestion.types import RawDocument
-from app.features.documents.models import Document
 from app.features.documents.models.enums import DocumentSource
-from app.features.documents.services import DocumentService, IngestionService
+from app.features.documents.services import DocumentService
 from app.plugins.expenses.models import (
     Expense,
     ExpenseDocument,
     ExpenseDocumentRole,
+    ExpenseRequiredAction,
     ExpenseStatus,
 )
 from app.plugins.expenses.schemas import ExpenseCreateData
@@ -24,17 +24,15 @@ class ExpenseService:
         self,
         session: AsyncSession,
         document_service: DocumentService,
-        ingestion_service: IngestionService,
     ):
         self.session = session
         self.document_service = document_service
-        self.ingestion_service = ingestion_service
 
     async def create(
         self,
         data: ExpenseCreateData,
-        files: list[UploadFile],
-    ) -> Expense:
+        files: Sequence[UploadFile],
+    ) -> tuple[Expense, list[UUID]]:
         if not files:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -52,24 +50,20 @@ class ExpenseService:
             currency=data.currency,
             expense_date=data.expense_date,
         )
-
         self.session.add(expense)
         await self.session.flush()
 
-        await self._attach_new_documents(
-            expense=expense,
-            files=files,
-        )
-
+        document_ids = await self._attach_new_documents(expense, files)
         await self.session.commit()
-        return await self.get_by_id(expense.id)
+
+        return await self.get_by_id(expense.id), document_ids
 
     async def append(
         self,
         expense_id: str,
-        files: list[UploadFile],
+        files: Sequence[UploadFile],
         data: ExpenseCreateData | None = None,
-    ) -> Expense:
+    ) -> tuple[Expense, list[UUID]]:
         expense = await self.get_by_business_id(expense_id)
 
         if expense.status == ExpenseStatus.APPROVED:
@@ -87,19 +81,14 @@ class ExpenseService:
         if data is not None:
             self._apply_updates(expense, data)
 
-        if files:
-            await self._attach_new_documents(
-                expense=expense,
-                files=files,
-            )
-
+        document_ids = await self._attach_new_documents(expense, files)
         expense.status = ExpenseStatus.SUBMITTED
         expense.decision_reason = None
-        expense.required_action = "none"
+        expense.required_action = ExpenseRequiredAction.NONE
         expense.decision_evidence = None
 
         await self.session.commit()
-        return await self.get_by_id(expense.id)
+        return await self.get_by_id(expense.id), document_ids
 
     async def get_by_id(self, expense_id: UUID) -> Expense:
         result = await self.session.execute(
@@ -138,8 +127,10 @@ class ExpenseService:
     async def _attach_new_documents(
         self,
         expense: Expense,
-        files: list[UploadFile],
-    ) -> None:
+        files: Sequence[UploadFile],
+    ) -> list[UUID]:
+        document_ids: list[UUID] = []
+
         for file in files:
             raw_document = RawDocument(
                 content=await file.read(),
@@ -150,7 +141,6 @@ class ExpenseService:
             )
 
             document = await self.document_service.ingest(raw_document)
-            await self.ingestion_service.process_document(document.id)
 
             if await self._document_already_attached(expense.id, document.id):
                 continue
@@ -161,6 +151,9 @@ class ExpenseService:
                     role=ExpenseDocumentRole.RECEIPT,
                 )
             )
+            document_ids.append(document.id)
+
+        return document_ids
 
     async def _document_already_attached(
         self,
