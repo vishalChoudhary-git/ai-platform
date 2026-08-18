@@ -1,0 +1,59 @@
+### Normal hotel expense
+POST {{base_url}}/plugins/expenses
+Content-Type: multipart/form-data; boundary=ExpenseBoundary
+
+--ExpenseBoundary
+Content-Disposition: form-data; name="expense"
+Content-Type: application/json
+
+{
+  "employee_name": "Vishal Choudhary",
+  "employee_email": "vishal@example.com",
+  "manager_email": "manager@example.com",
+  "category": "hotel",
+  "description": "Hotel stay during Mumbai business trip",
+  "amount": 12000,
+  "currency": "INR",
+  "expense_date": "2026-08-15"
+}
+--ExpenseBoundary
+Content-Disposition: form-data; name="files"; filename="hotel-receipt.pdf"
+Content-Type: application/pdf
+
+< ./fixtures/hotel-receipt.pdf
+--ExpenseBoundary--
+
+### Multi-document travel expense
+POST {{base_url}}/plugins/expenses
+Content-Type: multipart/form-data; boundary=ExpenseBoundary
+
+--ExpenseBoundary
+Content-Disposition: form-data; name="expense"
+Content-Type: application/json
+
+{
+  "employee_name": "Vishal Choudhary",
+  "employee_email": "vishal@example.com",
+  "manager_email": "manager@example.com",
+  "category": "travel",
+  "description": "Mumbai business trip",
+  "amount": 18500,
+  "currency": "INR",
+  "expense_date": "2026-08-15"
+}
+--ExpenseBoundary
+Content-Disposition: form-data; name="files"; filename="hotel-receipt.pdf"
+Content-Type: application/pdf
+
+< ./fixtures/hotel-receipt.pdf
+--ExpenseBoundary
+Content-Disposition: form-data; name="files"; filename="meal-receipt.pdf"
+Content-Type: application/pdf
+
+< ./fixtures/meal-receipt.pdf
+--ExpenseBoundary
+Content-Disposition: form-data; name="files"; filename="taxi-receipt.pdf"
+Content-Type: application/pdf
+
+< ./fixtures/taxi-receipt.pdf
+--ExpenseBoundary--
