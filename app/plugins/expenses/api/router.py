@@ -3,11 +3,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile, status
 
+from app.features.documents.api.dependencies import get_ingestion_service
 from app.features.documents.services import IngestionService
 from app.plugins.expenses.schemas import ExpenseCreateData, ExpenseResponse
 from app.plugins.expenses.services import ExpenseService
 
-from .dependencies import get_expense_service, get_ingestion_service
+from .dependencies import get_expense_service
 
 router = APIRouter(
     prefix="/plugins/expenses",
