@@ -1,29 +1,38 @@
 from io import BytesIO
 from types import SimpleNamespace
+from typing import cast
 from uuid import uuid4
 
 import pytest
 from fastapi import UploadFile
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.datastructures import Headers
 
+from app.core.ingestion.types import RawDocument
+from app.features.documents.models.document import Document
+from app.features.documents.services import DocumentService
+from app.plugins.expenses.models import Expense, ExpenseDocument
 from app.plugins.expenses.services import ExpenseService
 
 
 class FakeSession:
     def __init__(self) -> None:
-        self.added: list[object] = []
+        self.added: list[ExpenseDocument] = []
 
-    def add(self, value: object) -> None:
+    def add(self, value: ExpenseDocument) -> None:
         self.added.append(value)
+
+    async def execute(self, _query):
+        return SimpleNamespace(scalar_one_or_none=lambda: None)
 
 
 class FakeDocumentService:
     def __init__(self) -> None:
-        self.raw_documents = []
+        self.raw_documents: list[RawDocument] = []
 
-    async def ingest(self, raw_document):
+    async def ingest(self, raw_document: RawDocument) -> Document:
         self.raw_documents.append(raw_document)
-        return SimpleNamespace(id=uuid4())
+        return cast(Document, SimpleNamespace(id=uuid4()))
 
 
 def make_upload_file() -> UploadFile:
@@ -38,8 +47,11 @@ def make_upload_file() -> UploadFile:
 async def test_attach_new_documents_does_not_store_expense_id_in_document_metadata() -> None:
     session = FakeSession()
     document_service = FakeDocumentService()
-    service = ExpenseService(session=session, document_service=document_service)
-    expense = SimpleNamespace(id=uuid4(), expense_id="EXP-001")
+    service = ExpenseService(
+        session=cast(AsyncSession, session),
+        document_service=cast(DocumentService, document_service),
+    )
+    expense = cast(Expense, SimpleNamespace(id=uuid4(), expense_id="EXP-001"))
 
     await service._attach_new_documents(expense, [make_upload_file()])
 
