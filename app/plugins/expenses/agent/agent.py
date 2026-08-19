@@ -3,13 +3,13 @@ from typing import Any
 
 from openai import AsyncOpenAI
 
-from app.core.config import app_settings
+from app.core.config import get_settings
 from app.features.knowledge.services import KnowledgeService
 from app.plugins.expenses.services import ExpenseService
+from app.plugins.expenses.tools import ExpenseAgentTools
 
 from .schemas import AgentDecision
 from .state import ExpenseAgentState
-from app.plugins.expenses.tools import ExpenseAgentTools
 
 
 class ExpenseAgent:
@@ -22,9 +22,10 @@ class ExpenseAgent:
         client: AsyncOpenAI | None = None,
         model: str | None = None,
     ) -> None:
+        settings = get_settings()
         self.tools = ExpenseAgentTools(expense_service, knowledge_service)
-        self.client = client or AsyncOpenAI(api_key=app_settings.openai_api_key)
-        self.model = model or app_settings.rag_llm_model
+        self.client = client or AsyncOpenAI(api_key=settings.openai_api_key)
+        self.model = model or settings.rag_llm_model
 
     async def resolve(self, expense_id: str) -> AgentDecision:
         expense = await self.tools.expense_service.get_by_business_id(expense_id)
@@ -57,13 +58,11 @@ class ExpenseAgent:
 
             if not tool_calls:
                 decision = self._parse_decision(message.content)
-                state.tool_results.extend(
-                    [
-                        {
-                            "type": "final_decision",
-                            "status": decision.status.value,
-                        }
-                    ]
+                state.tool_results.append(
+                    {
+                        "type": "final_decision",
+                        "status": decision.status.value,
+                    }
                 )
                 return decision
 
