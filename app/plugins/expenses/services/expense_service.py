@@ -120,7 +120,7 @@ class ExpenseService:
                     filename=file.filename,
                     mime_type=file.content_type or "application/octet-stream",
                     source=DocumentSource.UPLOAD,
-                    metadata={"expense_id": expense.expense_id},
+                    metadata={},
                 )
             )
             if await self._document_already_attached(expense.id, document.id):
