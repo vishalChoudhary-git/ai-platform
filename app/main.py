@@ -7,6 +7,7 @@ from app.core.registry import connector_registry, extension_registry
 from app.extensions.upload import UploadExtension
 from app.features.documents.api.router import router as documents_router
 from app.features.knowledge.api.router import router as knowledge_router
+from app.plugins.expenses.api.router import router as expenses_router
 
 
 def create_app() -> FastAPI:
@@ -20,6 +21,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(documents_router)
     app.include_router(knowledge_router)
+    app.include_router(expenses_router)
     upload_extension = UploadExtension()
     upload_extension.register()
     extension_registry.register(

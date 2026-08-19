@@ -1,0 +1,23 @@
+### Append a corrected receipt to an existing expense
+POST {{base_url}}/plugins/expenses?expense_id={{expense_id}}
+Content-Type: multipart/form-data; boundary=ExpenseBoundary
+
+--ExpenseBoundary
+Content-Disposition: form-data; name="files"; filename="corrected-hotel-receipt.pdf"
+Content-Type: application/pdf
+
+< ./fixtures/corrected-hotel-receipt.pdf
+--ExpenseBoundary--
+
+### Append additional business information without re-uploading documents
+POST {{base_url}}/plugins/expenses?expense_id={{expense_id}}
+Content-Type: multipart/form-data; boundary=ExpenseBoundary
+
+--ExpenseBoundary
+Content-Disposition: form-data; name="expense"
+Content-Type: application/json
+
+{
+  "description": "Updated: hotel stay was required for the Mumbai client visit"
+}
+--ExpenseBoundary--

@@ -1,0 +1,17 @@
+{
+  "name": "auto-approval-candidate",
+  "description": "Normal hotel expense within the expected policy limit.",
+  "request": {
+    "employee_name": "Vishal Choudhary",
+    "employee_email": "vishal@example.com",
+    "manager_email": "manager@example.com",
+    "category": "hotel",
+    "description": "Hotel stay during Mumbai business trip",
+    "amount": 12000,
+    "currency": "INR",
+    "expense_date": "2026-08-15"
+  },
+  "files": ["hotel-receipt.pdf"],
+  "expected_domain_status": "submitted",
+  "expected_future_agent_outcome": "approved"
+}

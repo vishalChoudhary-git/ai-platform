@@ -1,0 +1,21 @@
+{
+  "name": "multi-document-travel-expense",
+  "description": "One expense with hotel, meal, and taxi supporting documents.",
+  "request": {
+    "employee_name": "Vishal Choudhary",
+    "employee_email": "vishal@example.com",
+    "manager_email": "manager@example.com",
+    "category": "travel",
+    "description": "Mumbai business trip",
+    "amount": 18500,
+    "currency": "INR",
+    "expense_date": "2026-08-15"
+  },
+  "files": [
+    "hotel-receipt.pdf",
+    "meal-receipt.pdf",
+    "taxi-receipt.pdf"
+  ],
+  "expected_domain_status": "submitted",
+  "expected_document_count": 3
+}

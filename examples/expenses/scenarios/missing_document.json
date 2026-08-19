@@ -1,0 +1,17 @@
+{
+  "name": "missing-supporting-document",
+  "description": "Expense submission where the future agent should identify missing evidence and request an additional document.",
+  "request": {
+    "employee_name": "Vishal Choudhary",
+    "employee_email": "vishal@example.com",
+    "manager_email": "manager@example.com",
+    "category": "hotel",
+    "description": "Hotel stay during Mumbai business trip",
+    "amount": 12500,
+    "currency": "INR",
+    "expense_date": "2026-08-15"
+  },
+  "files": [],
+  "expected_domain_response": "422 because a new expense currently requires at least one supporting document",
+  "expected_future_agent_action": "information_required / additional_document"
+}

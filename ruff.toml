@@ -10,3 +10,6 @@ select = [
 ]
 
 ignore = []
+
+[lint.per-file-ignores]
+"migrations/**/*.py" = ["E501"]
