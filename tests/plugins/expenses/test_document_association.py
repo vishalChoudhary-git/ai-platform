@@ -1,6 +1,8 @@
+from io import BytesIO
 from types import SimpleNamespace
 from uuid import uuid4
 
+import pytest
 from fastapi import UploadFile
 from starlette.datastructures import Headers
 
@@ -26,12 +28,13 @@ class FakeDocumentService:
 
 def make_upload_file() -> UploadFile:
     return UploadFile(
+        file=BytesIO(b"fake pdf content"),
         filename="hotel-receipt.pdf",
-        file=None,
         headers=Headers({"content-type": "application/pdf"}),
     )
 
 
+@pytest.mark.asyncio
 async def test_attach_new_documents_does_not_store_expense_id_in_document_metadata() -> None:
     session = FakeSession()
     document_service = FakeDocumentService()
