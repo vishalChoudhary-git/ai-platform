@@ -125,8 +125,10 @@ class ExpenseService:
             )
             if await self._document_already_attached(expense.id, document.id):
                 continue
-            expense.documents.append(
+
+            self.session.add(
                 ExpenseDocument(
+                    expense_id=expense.id,
                     document_id=document.id,
                     role=ExpenseDocumentRole.RECEIPT,
                 )
