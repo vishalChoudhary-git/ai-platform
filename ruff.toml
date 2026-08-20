@@ -13,3 +13,4 @@ ignore = []
 
 [lint.per-file-ignores]
 "migrations/**/*.py" = ["E501"]
+"app/plugins/expenses/agent/agent.py" = ["E501"]

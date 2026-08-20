@@ -1,5 +1,3 @@
-import json
-
 from redis.asyncio import Redis
 
 from .schemas import ExpensePolicySnapshot
