@@ -23,11 +23,13 @@ from app.plugins.expenses.schemas import (
 from app.plugins.expenses.services import ExpenseService
 
 from .dependencies import get_expense_service
+from .policy.api import router as policy_router
 
 router = APIRouter(
     prefix="/plugins/expenses",
     tags=["expenses"],
 )
+router.include_router(policy_router)
 
 
 @router.post(
