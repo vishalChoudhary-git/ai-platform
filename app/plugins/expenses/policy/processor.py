@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
 import json
 import logging
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -66,9 +66,7 @@ class ExpensePolicyProcessor:
                 version=policy.version,
                 checksum=policy.checksum,
                 effective_from=(
-                    policy.effective_from.isoformat()
-                    if policy.effective_from
-                    else None
+                    policy.effective_from.isoformat() if policy.effective_from else None
                 ),
                 rules=rules,
             )
@@ -121,9 +119,7 @@ class ExpensePolicyProcessor:
         status: ExpensePolicyStatus,
     ) -> None:
         await self.session.execute(
-            update(ExpensePolicy)
-            .where(ExpensePolicy.id == policy_db_id)
-            .values(status=status)
+            update(ExpensePolicy).where(ExpensePolicy.id == policy_db_id).values(status=status)
         )
         await self.session.commit()
 
@@ -133,7 +129,7 @@ class ExpensePolicyProcessor:
             .where(ExpensePolicy.id == policy_db_id)
             .values(
                 status=ExpensePolicyStatus.PUBLISHED,
-                published_at=datetime.now(timezone.utc),
+                published_at=datetime.now(UTC),
             )
         )
         await self.session.commit()

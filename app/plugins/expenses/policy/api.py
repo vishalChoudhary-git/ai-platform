@@ -1,6 +1,15 @@
 from datetime import date
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+    status,
+)
 
 from app.core.auth.dependencies import require_role
 from app.core.auth.models import AuthenticatedUser
@@ -10,10 +19,7 @@ from .dependencies import get_policy_service
 from .schemas import ExpensePolicyResponse
 from .service import ExpensePolicyService
 
-router = APIRouter(
-    prefix="/plugins/expenses/policies",
-    tags=["expense-policies"],
-)
+router = APIRouter(prefix="/policies", tags=["expense-policies"])
 
 
 @router.post(

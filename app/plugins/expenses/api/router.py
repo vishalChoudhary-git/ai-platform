@@ -20,13 +20,12 @@ from app.plugins.expenses.schemas import (
 )
 from app.plugins.expenses.services import ExpenseService
 
+from ..evidence.background import process_expense_document_in_background
+from ..policy.api import router as policy_router
 from .dependencies import get_expense_service
-from .evidence.background import process_expense_document_in_background
-from .policy.api import router as policy_router
 
 router = APIRouter(
     prefix="/plugins/expenses",
-    tags=["expenses"],
 )
 router.include_router(policy_router)
 
@@ -35,6 +34,7 @@ router.include_router(policy_router)
     "",
     response_model=ExpenseResponse,
     status_code=status.HTTP_201_CREATED,
+    tags=["expenses"],
 )
 async def submit_expense(
     background_tasks: BackgroundTasks,

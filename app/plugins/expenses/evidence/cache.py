@@ -1,9 +1,8 @@
-import json
 from typing import Any
 from uuid import UUID
 
-from redis.asyncio import Redis
 from pydantic import BaseModel, Field
+from redis.asyncio import Redis
 
 
 class ExpenseEvidence(BaseModel):
