@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Any
 
 from openai import AsyncOpenAI
@@ -10,6 +11,8 @@ from app.plugins.expenses.tools import ExpenseAgentTools
 
 from .schemas import AgentDecision
 from .state import ExpenseAgentState
+
+logger = logging.getLogger(__name__)
 
 
 class ExpenseAgent:
@@ -26,10 +29,24 @@ class ExpenseAgent:
         self.tools = ExpenseAgentTools(expense_service, knowledge_service)
         self.client = client or AsyncOpenAI(api_key=settings.openai_api_key)
         self.model = model or settings.rag_llm_model
+        logger.info(
+            "ExpenseAgent.__init__: model=%s max_tool_rounds=%s",
+            self.model,
+            self.MAX_TOOL_ROUNDS,
+        )
 
     async def resolve(self, expense_id: str) -> AgentDecision:
+        logger.info("ExpenseAgent.resolve: start expense_id=%s", expense_id)
+
         expense = await self.tools.expense_service.get_by_business_id(expense_id)
         state = ExpenseAgentState(expense=expense)
+        logger.info(
+            "ExpenseAgent.resolve: expense_loaded expense_id=%s status=%s documents=%s approvals=%s",
+            expense.expense_id,
+            expense.status.value,
+            len(expense.documents),
+            len(expense.approvals),
+        )
 
         messages: list[dict[str, Any]] = [
             {
@@ -41,8 +58,14 @@ class ExpenseAgent:
                 "content": f"Resolve expense {expense_id} according to company policy.",
             },
         ]
+        logger.info("ExpenseAgent.resolve: initial_messages_prepared expense_id=%s", expense_id)
 
-        for _ in range(self.MAX_TOOL_ROUNDS):
+        for round_number in range(1, self.MAX_TOOL_ROUNDS + 1):
+            logger.info(
+                "ExpenseAgent.resolve: llm_call_start expense_id=%s round=%s",
+                expense_id,
+                round_number,
+            )
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -53,6 +76,12 @@ class ExpenseAgent:
 
             message = response.choices[0].message
             tool_calls = message.tool_calls or []
+            logger.info(
+                "ExpenseAgent.resolve: llm_call_complete expense_id=%s round=%s tool_calls=%s",
+                expense_id,
+                round_number,
+                len(tool_calls),
+            )
 
             messages.append(message.model_dump(exclude_none=True))
 
@@ -64,9 +93,23 @@ class ExpenseAgent:
                         "status": decision.status.value,
                     }
                 )
+                logger.info(
+                    "ExpenseAgent.resolve: final_decision expense_id=%s round=%s status=%s required_action=%s",
+                    expense_id,
+                    round_number,
+                    decision.status.value,
+                    decision.required_action.value,
+                )
                 return decision
 
             for tool_call in tool_calls:
+                logger.info(
+                    "ExpenseAgent._execute_tool: start expense_id=%s round=%s tool=%s call_id=%s",
+                    expense_id,
+                    round_number,
+                    tool_call.function.name,
+                    tool_call.id,
+                )
                 result = await self._execute_tool(
                     tool_call.function.name,
                     tool_call.function.arguments,
@@ -78,6 +121,12 @@ class ExpenseAgent:
                         "result": result,
                     }
                 )
+                logger.info(
+                    "ExpenseAgent._execute_tool: complete expense_id=%s round=%s tool=%s",
+                    expense_id,
+                    round_number,
+                    tool_call.function.name,
+                )
                 messages.append(
                     {
                         "role": "tool",
@@ -86,6 +135,11 @@ class ExpenseAgent:
                     }
                 )
 
+        logger.warning(
+            "ExpenseAgent.resolve: max_tool_rounds_exceeded expense_id=%s max_rounds=%s",
+            expense_id,
+            self.MAX_TOOL_ROUNDS,
+        )
         raise RuntimeError("Expense agent exceeded the maximum tool-call rounds.")
 
     @staticmethod
