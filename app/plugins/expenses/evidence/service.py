@@ -9,10 +9,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.features.documents.models.document import Document
 from app.features.documents.models.document_chunk import DocumentChunk
+from app.features.documents.models.enums import DocumentStatus
 from app.features.documents.services.ingestion_service import IngestionService
 
-from .cache import ExpenseEvidenceCache, ExpenseEvidence
+from .cache import ExpenseEvidence, ExpenseEvidenceCache
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +36,29 @@ class ExpenseEvidenceProcessor:
         self.model = model or settings.rag_llm_model
 
     async def process(self, expense_id: str, document_id: UUID) -> ExpenseEvidence:
+        cached = await self.cache.get(expense_id, document_id)
+        if cached is not None:
+            logger.info(
+                "ExpenseEvidenceProcessor.process: cache_hit expense_id=%s document_id=%s",
+                expense_id,
+                document_id,
+            )
+            return cached
+
         logger.info(
             "ExpenseEvidenceProcessor.process: start expense_id=%s document_id=%s",
             expense_id,
             document_id,
         )
 
-        await self.ingestion_service.process_document(document_id)
+        document = await self.session.scalar(
+            select(Document).where(Document.id == document_id)
+        )
+        if document is None:
+            raise ValueError(f"Document '{document_id}' was not found.")
+
+        if document.status != DocumentStatus.READY:
+            await self.ingestion_service.process_document(document_id)
 
         chunks = await self.session.scalars(
             select(DocumentChunk)
