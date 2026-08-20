@@ -1,8 +1,10 @@
+import logging
 from typing import Any
-from uuid import UUID
 
 from app.features.knowledge.services import KnowledgeService
 from app.plugins.expenses.services import ExpenseService
+
+logger = logging.getLogger(__name__)
 
 
 class ExpenseAgentTools:
@@ -15,8 +17,9 @@ class ExpenseAgentTools:
         self.knowledge_service = knowledge_service
 
     async def get_expense(self, expense_id: str) -> dict[str, Any]:
+        logger.info("ExpenseAgentTools.get_expense: start expense_id=%s", expense_id)
         expense = await self.expense_service.get_by_business_id(expense_id)
-        return {
+        result = {
             "expense_id": expense.expense_id,
             "employee_name": expense.employee_name,
             "employee_email": expense.employee_email,
@@ -43,10 +46,18 @@ class ExpenseAgentTools:
                 for approval in expense.approvals
             ],
         }
+        logger.info(
+            "ExpenseAgentTools.get_expense: complete expense_id=%s documents=%s approvals=%s",
+            expense_id,
+            len(result["documents"]),
+            len(result["approvals"]),
+        )
+        return result
 
     async def search_expense_policy(self, query: str) -> dict[str, Any]:
+        logger.info("ExpenseAgentTools.search_expense_policy: start")
         response = await self.knowledge_service.query(query=query)
-        return {
+        result = {
             "answer": response.answer,
             "sources": [
                 {
@@ -60,3 +71,8 @@ class ExpenseAgentTools:
                 for source in response.sources
             ],
         }
+        logger.info(
+            "ExpenseAgentTools.search_expense_policy: complete sources=%s",
+            len(result["sources"]),
+        )
+        return result
