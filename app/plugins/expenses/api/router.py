@@ -13,8 +13,6 @@ from fastapi import (
     status,
 )
 
-from app.features.documents.api.dependencies import get_ingestion_service
-from app.features.documents.services import IngestionService
 from app.plugins.expenses.schemas import (
     ExpenseCreateData,
     ExpenseResponse,
@@ -23,6 +21,7 @@ from app.plugins.expenses.schemas import (
 from app.plugins.expenses.services import ExpenseService
 
 from .dependencies import get_expense_service
+from .evidence.background import process_expense_document_in_background
 from .policy.api import router as policy_router
 
 router = APIRouter(
@@ -43,7 +42,6 @@ async def submit_expense(
     expense: Annotated[str | None, Form()] = None,
     files: Annotated[list[UploadFile], File()] = [],
     service: ExpenseService = Depends(get_expense_service),
-    ingestion_service: IngestionService = Depends(get_ingestion_service),
 ) -> ExpenseResponse:
     try:
         data = json.loads(expense) if expense else None
@@ -74,7 +72,8 @@ async def submit_expense(
 
     for document_id in document_ids:
         background_tasks.add_task(
-            ingestion_service.process_document,
+            process_expense_document_in_background,
+            result.expense_id,
             document_id,
         )
 
