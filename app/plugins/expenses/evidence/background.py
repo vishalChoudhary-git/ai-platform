@@ -8,7 +8,7 @@ from app.core.db.session import async_session_factory
 from app.core.storage.cloudflare_r2 import CloudflareR2StorageProvider
 from app.features.documents.repositories import DocumentRepository
 from app.features.documents.repositories.document_chunk_repository import DocumentChunkRepository
-from app.features.documents.services import IngestionService
+from app.features.documents.services import DocumentService, IngestionService
 from app.features.knowledge.services import KnowledgeService
 from app.rag.factory import create_rag_service
 from app.plugins.expenses.resolution import ExpenseResolutionService
@@ -39,9 +39,8 @@ async def process_expense_documents_in_background(
         for document_id in document_ids:
             await evidence_processor.process(expense_id, document_id)
 
-        expense_service = ExpenseService(session, __import__(
-            "app.features.documents.services", fromlist=["DocumentService"]
-        ).DocumentService(document_repository, storage))
+        document_service = DocumentService(document_repository, storage)
+        expense_service = ExpenseService(session, document_service)
         knowledge_service = KnowledgeService(create_rag_service(session))
         await ExpenseResolutionService(
             session=session,
