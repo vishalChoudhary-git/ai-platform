@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     email_smtp_use_tls: bool = True
     email_from_address: str = "no-reply@example.com"
     email_from_name: str = "AI Platform"
+    email_recipient_delay_seconds: float = 1.1
 
 
 @lru_cache
