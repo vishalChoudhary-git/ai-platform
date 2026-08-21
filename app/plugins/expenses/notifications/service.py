@@ -12,26 +12,24 @@ class ExpenseNotificationService:
         self.email_sender = email_sender
 
     async def send_decision_notification(self, expense: Expense) -> None:
-        employee = self._employee_message(expense)
-        manager = self._manager_message(expense)
-
+        messages = [self._employee_message(expense), self._manager_message(expense)]
         results = await asyncio.gather(
-            self.email_sender.send(employee),
-            self.email_sender.send(manager),
+            *(self.email_sender.send(message) for message in messages),
             return_exceptions=True,
         )
 
         failures = [result for result in results if isinstance(result, Exception)]
         if failures:
             logger.error(
-                "ExpenseNotificationService.send_decision_notification: failed expense_id=%s failures=%s",
+                "ExpenseNotificationService.send_decision_notification: failures expense_id=%s count=%s",
                 expense.expense_id,
                 len(failures),
             )
             for failure in failures:
-                logger.exception(
-                    "ExpenseNotificationService.send_decision_notification: email delivery failure",
-                    exc_info=failure,
+                logger.error(
+                    "ExpenseNotificationService.send_decision_notification: delivery failure expense_id=%s error=%s",
+                    expense.expense_id,
+                    failure,
                 )
         else:
             logger.info(
@@ -56,7 +54,7 @@ class ExpenseNotificationService:
 
     @staticmethod
     def _manager_message(expense: Expense) -> EmailMessageData:
-        action_message = (
+        manager_action = (
             "Manager decision is required for this expense."
             if expense.required_action.value == "manager_decision"
             else "No manager action is currently required."
@@ -65,13 +63,13 @@ class ExpenseNotificationService:
             to=expense.manager_email,
             subject=f"Expense {expense.expense_id} - {expense.status.value}",
             body=(
-                f"Hello,\n\n"
+                "Hello,\n\n"
                 f"Expense {expense.expense_id} for {expense.employee_name} has been evaluated.\n\n"
                 f"Status: {expense.status.value}\n"
                 f"Amount: {expense.amount} {expense.currency or ''}\n"
                 f"Category: {expense.category}\n"
                 f"Reason: {expense.decision_reason or 'No additional reason provided.'}\n"
                 f"Required action: {expense.required_action.value}\n\n"
-                f"{action_message}\n"
+                f"{manager_action}\n"
             ),
         )
