@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Any
 
 from app.core.notifications import EmailMessageData, EmailSender
 from app.plugins.expenses.models import Expense
@@ -55,6 +56,7 @@ class ExpenseNotificationService:
     @staticmethod
     def _manager_message(expense: Expense) -> EmailMessageData:
         requires_manager_decision = expense.required_action.value == "manager_decision"
+        policy_details = ExpenseNotificationService._policy_details(expense)
 
         if requires_manager_decision:
             subject = f"Action Required: Expense {expense.expense_id} - Policy Review"
@@ -62,6 +64,7 @@ class ExpenseNotificationService:
                 "ACTION REQUIRED: POLICY REVIEW\n\n"
                 "The automated expense review identified a policy exception "
                 "and requires your decision.\n\n"
+                f"Policy reference:\n{policy_details}\n\n"
                 f"Policy finding:\n{expense.decision_reason or 'No additional reason provided.'}\n\n"
                 "Required action: Manager approval or rejection is required."
             )
@@ -85,3 +88,42 @@ class ExpenseNotificationService:
                 "Please review the expense through the Expense workflow/API.\n"
             ),
         )
+
+    @staticmethod
+    def _policy_details(expense: Expense) -> str:
+        evidence = expense.decision_evidence or []
+        if isinstance(evidence, dict):
+            evidence = [evidence]
+
+        policy_items: list[str] = []
+        for item in evidence:
+            if not isinstance(item, dict) or "policy_id" not in item:
+                continue
+
+            policy_id = item.get("policy_id", "unknown")
+            version = item.get("version", "unknown")
+            effective_from = item.get("effective_from")
+            rule_applied = item.get("rule_applied", "unknown")
+            condition = item.get("condition", "unknown")
+            action = item.get("action") or item.get("rule_action") or "unknown"
+
+            policy_items.append(
+                "Policy ID: {policy_id}\n"
+                "Version: {version}\n"
+                "Effective from: {effective_from}\n"
+                "Rule applied: {rule_applied}\n"
+                "Condition: {condition}\n"
+                "Policy action: {action}".format(
+                    policy_id=policy_id,
+                    version=version,
+                    effective_from=effective_from or "not specified",
+                    rule_applied=rule_applied,
+                    condition=condition,
+                    action=action,
+                )
+            )
+
+        if policy_items:
+            return "\n\n".join(policy_items)
+
+        return "Policy reference was not included in the final agent evidence."
