@@ -11,10 +11,10 @@ from app.features.documents.repositories import DocumentRepository
 from app.features.documents.repositories.document_chunk_repository import DocumentChunkRepository
 from app.features.documents.services import DocumentService, IngestionService
 from app.features.knowledge.services import KnowledgeService
-from app.rag.factory import create_rag_service
 from app.plugins.expenses.notifications import ExpenseNotificationService
 from app.plugins.expenses.resolution import ExpenseResolutionService
 from app.plugins.expenses.services import ExpenseService
+from app.rag.factory import create_rag_service
 
 from .service import ExpenseEvidenceProcessor
 

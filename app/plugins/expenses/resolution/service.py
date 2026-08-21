@@ -6,7 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.knowledge.services import KnowledgeService
 from app.plugins.expenses.agent.agent import ExpenseAgent
-from app.plugins.expenses.models import ExpenseApproval, ExpenseApprovalStatus, ExpenseRequiredAction
+from app.plugins.expenses.models import (
+    ExpenseApproval,
+    ExpenseApprovalStatus,
+    ExpenseRequiredAction,
+)
 from app.plugins.expenses.notifications import ExpenseNotificationService
 from app.plugins.expenses.services import ExpenseService
 from app.plugins.expenses.tools import ExpenseAgentTools

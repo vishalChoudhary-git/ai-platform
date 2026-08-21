@@ -1,11 +1,16 @@
 from types import SimpleNamespace
+from typing import cast
 from uuid import uuid4
 
 import pytest
+from redis.asyncio import Redis
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.features.knowledge.services import KnowledgeService
 from app.plugins.expenses.agent.agent import ExpenseAgent
 from app.plugins.expenses.agent.schemas import AgentDecision
 from app.plugins.expenses.models import ExpenseRequiredAction, ExpenseStatus
+from app.plugins.expenses.services import ExpenseService
 from app.plugins.expenses.tools import ExpenseAgentTools
 
 
@@ -38,7 +43,12 @@ async def test_get_expense_tool_returns_structured_expense_context() -> None:
         async def query(self, query: str):
             raise AssertionError("Knowledge search should not be called")
 
-    tools = ExpenseAgentTools(FakeExpenseService(), FakeKnowledgeService())
+    tools = ExpenseAgentTools(
+        cast(ExpenseService, FakeExpenseService()),
+        cast(KnowledgeService, FakeKnowledgeService()),
+        cast(AsyncSession, None),
+        cast(Redis, None),
+    )
 
     result = await tools.get_expense("EXP-001")
 
@@ -73,7 +83,12 @@ async def test_search_expense_policy_maps_grounded_sources() -> None:
             assert query == "hotel reimbursement limit"
             return response
 
-    tools = ExpenseAgentTools(FakeExpenseService(), FakeKnowledgeService())
+    tools = ExpenseAgentTools(
+        cast(ExpenseService, FakeExpenseService()),
+        cast(KnowledgeService, FakeKnowledgeService()),
+        cast(AsyncSession, None),
+        cast(Redis, None),
+    )
 
     result = await tools.search_expense_policy("hotel reimbursement limit")
 
@@ -85,7 +100,7 @@ async def test_search_expense_policy_maps_grounded_sources() -> None:
 def test_agent_decision_schema_rejects_invalid_status() -> None:
     with pytest.raises(ValueError):
         AgentDecision(
-            status="rejected",
+            status=cast(ExpenseStatus, "rejected"),
             reason="Not supported in the current agent lifecycle",
         )
 
@@ -102,3 +117,13 @@ def test_agent_parses_structured_decision() -> None:
     assert decision.status == ExpenseStatus.INFORMATION_REQUIRED
     assert decision.required_action == ExpenseRequiredAction.MANAGER_DECISION
     assert decision.evidence[0]["policy_limit"] == 15000
+
+
+def test_agent_normalizes_single_evidence_object() -> None:
+    decision = ExpenseAgent._parse_decision(
+        '{"status":"approved",'
+        '"reason":"The expense complies with policy.",'
+        '"evidence":{"claimed_amount":12000,"policy_limit":15000}}'
+    )
+
+    assert decision.evidence == [{"claimed_amount": 12000, "policy_limit": 15000}]

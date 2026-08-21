@@ -119,9 +119,7 @@ class ExpenseAgent:
                     tool_call.function.arguments,
                     expense_id,
                 )
-                state.tool_results.append(
-                    {"tool": tool_call.function.name, "result": result}
-                )
+                state.tool_results.append({"tool": tool_call.function.name, "result": result})
                 logger.info(
                     "ExpenseAgent._execute_tool: complete expense_id=%s round=%s tool=%s",
                     expense_id,
@@ -176,7 +174,7 @@ Do not approve an expense when required evidence is missing, the applicable poli
 Do not call tools for side effects. This agent version is investigation-only.
 
 When you have enough evidence, return a JSON object matching the AgentDecision schema with:
-status, reason, required_action, evidence, missing_information.
+status, reason, required_action, evidence (an array of evidence objects), missing_information.
 """
 
     @staticmethod
