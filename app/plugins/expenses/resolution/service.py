@@ -1,10 +1,10 @@
 import logging
 
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.knowledge.services import KnowledgeService
 from app.plugins.expenses.agent import ExpenseAgent
-from app.plugins.expenses.models import ExpenseRequiredAction, ExpenseStatus
 from app.plugins.expenses.services import ExpenseService
 from app.plugins.expenses.tools import ExpenseAgentTools
 
@@ -17,19 +17,27 @@ class ExpenseResolutionService:
         session: AsyncSession,
         expense_service: ExpenseService,
         knowledge_service: KnowledgeService,
-        tools: ExpenseAgentTools,
+        redis: Redis,
     ) -> None:
         self.session = session
         self.expense_service = expense_service
         self.knowledge_service = knowledge_service
-        self.tools = tools
+        self.redis = redis
 
     async def resolve(self, expense_id: str) -> None:
         logger.info("ExpenseResolutionService.resolve: start expense_id=%s", expense_id)
+        tools = ExpenseAgentTools(
+            self.expense_service,
+            self.knowledge_service,
+            self.session,
+            self.redis,
+        )
         agent = ExpenseAgent(
             expense_service=self.expense_service,
             knowledge_service=self.knowledge_service,
-            tools=self.tools,
+            session=self.session,
+            redis=self.redis,
+            tools=tools,
         )
         decision = await agent.resolve(expense_id)
 
