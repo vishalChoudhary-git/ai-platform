@@ -1,7 +1,7 @@
 import asyncio
 import logging
-from typing import Any
 
+from app.core.config import get_settings
 from app.core.notifications import EmailMessageData, EmailSender
 from app.plugins.expenses.models import Expense
 
@@ -13,25 +13,36 @@ class ExpenseNotificationService:
         self.email_sender = email_sender
 
     async def send_decision_notification(self, expense: Expense) -> None:
+        settings = get_settings()
         messages = [self._employee_message(expense), self._manager_message(expense)]
-        results = await asyncio.gather(
-            *(self.email_sender.send(message) for message in messages),
-            return_exceptions=True,
-        )
+        failures: list[Exception] = []
 
-        failures = [result for result in results if isinstance(result, Exception)]
+        for index, message in enumerate(messages):
+            if index > 0 and settings.email_recipient_delay_seconds > 0:
+                logger.info(
+                    "ExpenseNotificationService.send_decision_notification: delaying next recipient expense_id=%s delay_seconds=%s",
+                    expense.expense_id,
+                    settings.email_recipient_delay_seconds,
+                )
+                await asyncio.sleep(settings.email_recipient_delay_seconds)
+
+            try:
+                await self.email_sender.send(message)
+            except Exception as exc:
+                failures.append(exc)
+                logger.error(
+                    "ExpenseNotificationService.send_decision_notification: delivery failure expense_id=%s recipient=%s error=%s",
+                    expense.expense_id,
+                    message.to,
+                    exc,
+                )
+
         if failures:
             logger.error(
                 "ExpenseNotificationService.send_decision_notification: failures expense_id=%s count=%s",
                 expense.expense_id,
                 len(failures),
             )
-            for failure in failures:
-                logger.error(
-                    "ExpenseNotificationService.send_decision_notification: delivery failure expense_id=%s error=%s",
-                    expense.expense_id,
-                    failure,
-                )
         else:
             logger.info(
                 "ExpenseNotificationService.send_decision_notification: complete expense_id=%s recipients=2",
@@ -56,7 +67,6 @@ class ExpenseNotificationService:
     @staticmethod
     def _manager_message(expense: Expense) -> EmailMessageData:
         requires_manager_decision = expense.required_action.value == "manager_decision"
-        policy_details = ExpenseNotificationService._policy_details(expense)
 
         if requires_manager_decision:
             subject = f"Action Required: Expense {expense.expense_id} - Policy Review"
@@ -64,7 +74,6 @@ class ExpenseNotificationService:
                 "ACTION REQUIRED: POLICY REVIEW\n\n"
                 "The automated expense review identified a policy exception "
                 "and requires your decision.\n\n"
-                f"Policy reference:\n{policy_details}\n\n"
                 f"Policy finding:\n{expense.decision_reason or 'No additional reason provided.'}\n\n"
                 "Required action: Manager approval or rejection is required."
             )
@@ -88,42 +97,3 @@ class ExpenseNotificationService:
                 "Please review the expense through the Expense workflow/API.\n"
             ),
         )
-
-    @staticmethod
-    def _policy_details(expense: Expense) -> str:
-        evidence = expense.decision_evidence or []
-        if isinstance(evidence, dict):
-            evidence = [evidence]
-
-        policy_items: list[str] = []
-        for item in evidence:
-            if not isinstance(item, dict) or "policy_id" not in item:
-                continue
-
-            policy_id = item.get("policy_id", "unknown")
-            version = item.get("version", "unknown")
-            effective_from = item.get("effective_from")
-            rule_applied = item.get("rule_applied", "unknown")
-            condition = item.get("condition", "unknown")
-            action = item.get("action") or item.get("rule_action") or "unknown"
-
-            policy_items.append(
-                "Policy ID: {policy_id}\n"
-                "Version: {version}\n"
-                "Effective from: {effective_from}\n"
-                "Rule applied: {rule_applied}\n"
-                "Condition: {condition}\n"
-                "Policy action: {action}".format(
-                    policy_id=policy_id,
-                    version=version,
-                    effective_from=effective_from or "not specified",
-                    rule_applied=rule_applied,
-                    condition=condition,
-                    action=action,
-                )
-            )
-
-        if policy_items:
-            return "\n\n".join(policy_items)
-
-        return "Policy reference was not included in the final agent evidence."
