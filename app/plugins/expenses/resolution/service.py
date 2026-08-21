@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.features.knowledge.services import KnowledgeService
 from app.plugins.expenses.agent.agent import ExpenseAgent
 from app.plugins.expenses.models import ExpenseApproval, ExpenseApprovalStatus, ExpenseRequiredAction
+from app.plugins.expenses.notifications import ExpenseNotificationService
 from app.plugins.expenses.services import ExpenseService
 from app.plugins.expenses.tools import ExpenseAgentTools
 
@@ -20,11 +21,13 @@ class ExpenseResolutionService:
         expense_service: ExpenseService,
         knowledge_service: KnowledgeService,
         redis: Redis,
+        notification_service: ExpenseNotificationService,
     ) -> None:
         self.session = session
         self.expense_service = expense_service
         self.knowledge_service = knowledge_service
         self.redis = redis
+        self.notification_service = notification_service
 
     async def resolve(self, expense_id: str) -> None:
         logger.info("ExpenseResolutionService.resolve: start expense_id=%s", expense_id)
@@ -86,3 +89,5 @@ class ExpenseResolutionService:
             expense.status.value,
             expense.required_action.value,
         )
+
+        await self.notification_service.send_decision_notification(expense)
