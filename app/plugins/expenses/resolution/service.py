@@ -1,10 +1,12 @@
 import logging
 
 from redis.asyncio import Redis
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.knowledge.services import KnowledgeService
 from app.plugins.expenses.agent.agent import ExpenseAgent
+from app.plugins.expenses.models import ExpenseApproval, ExpenseApprovalStatus, ExpenseRequiredAction
 from app.plugins.expenses.services import ExpenseService
 from app.plugins.expenses.tools import ExpenseAgentTools
 
@@ -46,6 +48,36 @@ class ExpenseResolutionService:
         expense.decision_reason = decision.reason
         expense.required_action = decision.required_action
         expense.decision_evidence = decision.evidence
+
+        if decision.required_action == ExpenseRequiredAction.MANAGER_DECISION:
+            existing_pending = await self.session.scalar(
+                select(ExpenseApproval.id).where(
+                    ExpenseApproval.expense_id == expense.id,
+                    ExpenseApproval.approver_email == expense.manager_email,
+                    ExpenseApproval.status == ExpenseApprovalStatus.PENDING,
+                )
+            )
+            if existing_pending is None:
+                self.session.add(
+                    ExpenseApproval(
+                        expense_id=expense.id,
+                        approver_email=expense.manager_email,
+                        status=ExpenseApprovalStatus.PENDING,
+                        reason=decision.reason,
+                    )
+                )
+                logger.info(
+                    "ExpenseResolutionService.resolve: manager_approval_created expense_id=%s manager=%s",
+                    expense_id,
+                    expense.manager_email,
+                )
+            else:
+                logger.info(
+                    "ExpenseResolutionService.resolve: manager_approval_exists expense_id=%s manager=%s",
+                    expense_id,
+                    expense.manager_email,
+                )
+
         await self.session.commit()
 
         logger.info(
