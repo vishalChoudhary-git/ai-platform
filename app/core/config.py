@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     rag_llm_model: str = "gpt-4.1-mini"
     rag_llm_max_tokens: int
     rag_llm_temperature: float
+    redis_url: str
 
 
 @lru_cache
