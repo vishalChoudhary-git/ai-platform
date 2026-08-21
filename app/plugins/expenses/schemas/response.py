@@ -48,7 +48,7 @@ class ExpenseResponse(BaseModel):
     status: ExpenseStatus
     decision_reason: str | None
     required_action: ExpenseRequiredAction
-    decision_evidence: dict[str, Any] | None
+    decision_evidence: list[dict[str, Any]] | None
     created_at: datetime
     updated_at: datetime
     documents: list[ExpenseDocumentResponse]
