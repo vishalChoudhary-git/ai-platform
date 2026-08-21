@@ -54,22 +54,34 @@ class ExpenseNotificationService:
 
     @staticmethod
     def _manager_message(expense: Expense) -> EmailMessageData:
-        manager_action = (
-            "Manager decision is required for this expense."
-            if expense.required_action.value == "manager_decision"
-            else "No manager action is currently required."
-        )
+        requires_manager_decision = expense.required_action.value == "manager_decision"
+
+        if requires_manager_decision:
+            subject = f"Action Required: Expense {expense.expense_id} - Policy Review"
+            action_section = (
+                "ACTION REQUIRED: POLICY REVIEW\n\n"
+                "The automated expense review identified a policy exception "
+                "and requires your decision.\n\n"
+                f"Policy finding:\n{expense.decision_reason or 'No additional reason provided.'}\n\n"
+                "Required action: Manager approval or rejection is required."
+            )
+        else:
+            subject = f"Expense {expense.expense_id} - {expense.status.value}"
+            action_section = "No manager action is currently required."
+
         return EmailMessageData(
             to=expense.manager_email,
-            subject=f"Expense {expense.expense_id} - {expense.status.value}",
+            subject=subject,
             body=(
                 "Hello,\n\n"
                 f"Expense {expense.expense_id} for {expense.employee_name} has been evaluated.\n\n"
-                f"Status: {expense.status.value}\n"
+                "Expense details:\n"
+                f"Employee: {expense.employee_name}\n"
                 f"Amount: {expense.amount} {expense.currency or ''}\n"
                 f"Category: {expense.category}\n"
-                f"Reason: {expense.decision_reason or 'No additional reason provided.'}\n"
+                f"Status: {expense.status.value}\n"
                 f"Required action: {expense.required_action.value}\n\n"
-                f"{manager_action}\n"
+                f"{action_section}\n\n"
+                "Please review the expense through the Expense workflow/API.\n"
             ),
         )
