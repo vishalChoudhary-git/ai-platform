@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     rag_llm_temperature: float
     redis_url: str
 
+    email_enabled: bool = False
+    email_smtp_host: str = "sandbox.smtp.mailtrap.io"
+    email_smtp_port: int = 2525
+    email_smtp_username: str = ""
+    email_smtp_password: str = ""
+    email_smtp_use_tls: bool = True
+    email_from_address: str = "no-reply@example.com"
+    email_from_name: str = "AI Platform"
+
 
 @lru_cache
 def get_settings() -> Settings:
