@@ -20,7 +20,7 @@ from app.plugins.expenses.schemas import (
 )
 from app.plugins.expenses.services import ExpenseService
 
-from ..evidence.background import process_expense_document_in_background
+from ..evidence.background import process_expense_documents_in_background
 from ..policy.api import router as policy_router
 from .dependencies import get_expense_service
 
@@ -70,11 +70,23 @@ async def submit_expense(
             files=files,
         )
 
-    for document_id in document_ids:
+    if document_ids:
         background_tasks.add_task(
-            process_expense_document_in_background,
+            process_expense_documents_in_background,
             result.expense_id,
-            document_id,
+            document_ids,
         )
 
     return result
+
+
+@router.get(
+    "/{expense_id}",
+    response_model=ExpenseResponse,
+    tags=["expenses"],
+)
+async def get_expense_status(
+    expense_id: str,
+    service: ExpenseService = Depends(get_expense_service),
+) -> ExpenseResponse:
+    return await service.get_by_business_id(expense_id)
