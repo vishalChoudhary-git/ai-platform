@@ -50,6 +50,12 @@ class ExpensePolicyService:
             )
         )
 
+        existing_document_policy = await self.session.scalar(
+            select(ExpensePolicy).where(ExpensePolicy.document_id == document.id)
+        )
+        if existing_document_policy:
+            raise ValueError("A policy for this document already exists.")
+
         policy = ExpensePolicy(
             policy_id=f"POL-{uuid4().hex[:20].upper()}",
             policy_name=policy_name,

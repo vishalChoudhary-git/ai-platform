@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -32,7 +33,7 @@ class ExpensePolicyResponse(BaseModel):
     policy_id: str
     policy_name: str
     version: str
-    document_id: str
+    document_id: UUID
     checksum: str
     effective_from: date | None
     status: ExpensePolicyStatus

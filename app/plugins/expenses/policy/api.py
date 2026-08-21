@@ -44,15 +44,21 @@ async def upload_policy(
             detail="effective_from must be YYYY-MM-DD",
         ) from exc
 
-    policy = await service.create(
-        policy_name=policy_name,
-        version=version,
-        effective_from=parsed_effective_from,
-        published_by=current_user.email,
-        content=await file.read(),
-        filename=file.filename or "policy.pdf",
-        mime_type=file.content_type or "application/octet-stream",
-    )
+    try:
+        policy = await service.create(
+            policy_name=policy_name,
+            version=version,
+            effective_from=parsed_effective_from,
+            published_by=current_user.email,
+            content=await file.read(),
+            filename=file.filename or "policy.pdf",
+            mime_type=file.content_type or "application/octet-stream",
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
     background_tasks.add_task(process_policy_in_background, policy.policy_id)
 
     return ExpensePolicyResponse.model_validate(policy)
