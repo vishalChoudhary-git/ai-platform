@@ -13,8 +13,6 @@ from fastapi import (
     status,
 )
 
-from app.features.documents.api.dependencies import get_ingestion_service
-from app.features.documents.services import IngestionService
 from app.plugins.expenses.schemas import (
     ExpenseCreateData,
     ExpenseResponse,
@@ -22,18 +20,21 @@ from app.plugins.expenses.schemas import (
 )
 from app.plugins.expenses.services import ExpenseService
 
+from ..evidence.background import process_expense_documents_in_background
+from ..policy.api import router as policy_router
 from .dependencies import get_expense_service
 
 router = APIRouter(
     prefix="/plugins/expenses",
-    tags=["expenses"],
 )
+router.include_router(policy_router)
 
 
 @router.post(
     "",
     response_model=ExpenseResponse,
     status_code=status.HTTP_201_CREATED,
+    tags=["expenses"],
 )
 async def submit_expense(
     background_tasks: BackgroundTasks,
@@ -41,7 +42,6 @@ async def submit_expense(
     expense: Annotated[str | None, Form()] = None,
     files: Annotated[list[UploadFile], File()] = [],
     service: ExpenseService = Depends(get_expense_service),
-    ingestion_service: IngestionService = Depends(get_ingestion_service),
 ) -> ExpenseResponse:
     try:
         data = json.loads(expense) if expense else None
@@ -70,10 +70,23 @@ async def submit_expense(
             files=files,
         )
 
-    for document_id in document_ids:
+    if document_ids:
         background_tasks.add_task(
-            ingestion_service.process_document,
-            document_id,
+            process_expense_documents_in_background,
+            result.expense_id,
+            document_ids,
         )
 
     return result
+
+
+@router.get(
+    "/{expense_id}",
+    response_model=ExpenseResponse,
+    tags=["expenses"],
+)
+async def get_expense_status(
+    expense_id: str,
+    service: ExpenseService = Depends(get_expense_service),
+) -> ExpenseResponse:
+    return await service.get_by_business_id(expense_id)

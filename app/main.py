@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
 
 from app.api.health import router as health_router
 from app.core.config import app_settings
@@ -28,6 +29,35 @@ def create_app() -> FastAPI:
         upload_extension.name,
         upload_extension,
     )
+
+    def custom_openapi() -> dict:
+        if app.openapi_schema:
+            return app.openapi_schema
+
+        schema = get_openapi(
+            title=app.title,
+            version=app.version,
+            description=app.description,
+            openapi_version="3.0.3",
+            routes=app.routes,
+        )
+
+        def normalize_file_schema(value: object) -> None:
+            if isinstance(value, dict):
+                if value.pop("contentMediaType", None):
+                    value["format"] = "binary"
+                for child in value.values():
+                    normalize_file_schema(child)
+            elif isinstance(value, list):
+                for child in value:
+                    normalize_file_schema(child)
+
+        normalize_file_schema(schema)
+
+        app.openapi_schema = schema
+        return app.openapi_schema
+
+    app.openapi = custom_openapi
     print(extension_registry.names())
     print(connector_registry.names())
     return app
