@@ -6,7 +6,6 @@
 - FastAPI
 - Pydantic
 - SQLAlchemy
-- 
 
 ### Document Intelligence
 
