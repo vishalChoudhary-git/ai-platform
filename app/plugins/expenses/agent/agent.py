@@ -3,6 +3,8 @@ import logging
 from typing import Any
 
 from openai import AsyncOpenAI
+from redis.asyncio import Redis
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.features.knowledge.services import KnowledgeService
@@ -22,11 +24,19 @@ class ExpenseAgent:
         self,
         expense_service: ExpenseService,
         knowledge_service: KnowledgeService,
+        session: AsyncSession,
+        redis: Redis,
         client: AsyncOpenAI | None = None,
         model: str | None = None,
+        tools: ExpenseAgentTools | None = None,
     ) -> None:
         settings = get_settings()
-        self.tools = ExpenseAgentTools(expense_service, knowledge_service)
+        self.tools = tools or ExpenseAgentTools(
+            expense_service,
+            knowledge_service,
+            session,
+            redis,
+        )
         self.client = client or AsyncOpenAI(api_key=settings.openai_api_key)
         self.model = model or settings.rag_llm_model
         logger.info(
@@ -49,10 +59,7 @@ class ExpenseAgent:
         )
 
         messages: list[dict[str, Any]] = [
-            {
-                "role": "system",
-                "content": self._system_prompt(),
-            },
+            {"role": "system", "content": self._system_prompt()},
             {
                 "role": "user",
                 "content": f"Resolve expense {expense_id} according to company policy.",
@@ -88,10 +95,7 @@ class ExpenseAgent:
             if not tool_calls:
                 decision = self._parse_decision(message.content)
                 state.tool_results.append(
-                    {
-                        "type": "final_decision",
-                        "status": decision.status.value,
-                    }
+                    {"type": "final_decision", "status": decision.status.value}
                 )
                 logger.info(
                     "ExpenseAgent.resolve: final_decision expense_id=%s round=%s status=%s required_action=%s",
@@ -116,10 +120,7 @@ class ExpenseAgent:
                     expense_id,
                 )
                 state.tool_results.append(
-                    {
-                        "tool": tool_call.function.name,
-                        "result": result,
-                    }
+                    {"tool": tool_call.function.name, "result": result}
                 )
                 logger.info(
                     "ExpenseAgent._execute_tool: complete expense_id=%s round=%s tool=%s",
@@ -150,6 +151,13 @@ Your goal is to resolve an expense according to company policy.
 
 You may investigate using the provided read-only tools. Decide what information you need and which tool to call. Do not invent policy rules or missing facts.
 
+Recommended investigation sequence:
+1. Get the expense details.
+2. Get the parsed receipt/supporting-document evidence.
+3. Get the applicable published policy rules.
+4. Use policy search when you need additional grounded policy context.
+5. When enough evidence is available, return the final decision.
+
 You may return only these expense statuses:
 - submitted
 - information_required
@@ -163,7 +171,7 @@ Required actions:
 - additional_document
 - manager_decision
 
-Do not approve an expense merely because the user supplied an amount. Use policy evidence when a policy decision is required.
+Do not approve an expense when required evidence is missing, the applicable policy is unavailable, or the policy requires manager decision.
 
 Do not call tools for side effects. This agent version is investigation-only.
 
@@ -181,9 +189,33 @@ status, reason, required_action, evidence, missing_information.
                     "description": "Retrieve the structured expense request and its existing document/approval associations.",
                     "parameters": {
                         "type": "object",
-                        "properties": {
-                            "expense_id": {"type": "string"},
-                        },
+                        "properties": {"expense_id": {"type": "string"}},
+                        "required": ["expense_id"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_expense_evidence",
+                    "description": "Retrieve parsed structured evidence for all documents attached to an expense.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"expense_id": {"type": "string"}},
+                        "required": ["expense_id"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_expense_policy",
+                    "description": "Retrieve the published policy version applicable to the expense date, including normalized policy rules.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"expense_id": {"type": "string"}},
                         "required": ["expense_id"],
                         "additionalProperties": False,
                     },
@@ -193,12 +225,10 @@ status, reason, required_action, evidence, missing_information.
                 "type": "function",
                 "function": {
                     "name": "search_expense_policy",
-                    "description": "Search company knowledge for expense reimbursement policies and return grounded sources.",
+                    "description": "Search company knowledge for additional grounded expense policy context and return sources.",
                     "parameters": {
                         "type": "object",
-                        "properties": {
-                            "query": {"type": "string"},
-                        },
+                        "properties": {"query": {"type": "string"}},
                         "required": ["query"],
                         "additionalProperties": False,
                     },
@@ -216,7 +246,10 @@ status, reason, required_action, evidence, missing_information.
 
         if name == "get_expense":
             return await self.tools.get_expense(payload.get("expense_id", expense_id))
-
+        if name == "get_expense_evidence":
+            return await self.tools.get_expense_evidence(payload.get("expense_id", expense_id))
+        if name == "get_expense_policy":
+            return await self.tools.get_expense_policy(payload.get("expense_id", expense_id))
         if name == "search_expense_policy":
             return await self.tools.search_expense_policy(payload["query"])
 
