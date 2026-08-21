@@ -4,7 +4,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.knowledge.services import KnowledgeService
-from app.plugins.expenses.agent import ExpenseAgent
+from app.plugins.expenses.agent.agent import ExpenseAgent
 from app.plugins.expenses.services import ExpenseService
 from app.plugins.expenses.tools import ExpenseAgentTools
 
