@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.notifications import SmtpEmailSender
@@ -26,6 +26,7 @@ class ExpenseApprovalService:
     ):
         decision.validate_for_decision()
 
+        approver_email = approver_email.strip().lower()
         expense = await self.expense_service.get_by_business_id(expense_id)
         if expense.required_action != ExpenseRequiredAction.MANAGER_DECISION:
             raise HTTPException(
@@ -37,7 +38,7 @@ class ExpenseApprovalService:
             select(ExpenseApproval)
             .where(
                 ExpenseApproval.expense_id == expense.id,
-                ExpenseApproval.approver_email == approver_email,
+                func.lower(ExpenseApproval.approver_email) == approver_email,
                 ExpenseApproval.status == ExpenseApprovalStatus.PENDING,
             )
             .limit(1)
@@ -63,11 +64,8 @@ class ExpenseApprovalService:
         )
         expense.required_action = ExpenseRequiredAction.NONE
         if decision.reason:
-            expense.decision_reason = (
-                f"Manager decision: {decision.reason}"
-            )
+            expense.decision_reason = f"Manager decision: {decision.reason}"
 
         await self.session.commit()
-
         await self.notification_service.send_decision_notification(expense)
         return expense
