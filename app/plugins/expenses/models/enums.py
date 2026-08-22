@@ -5,6 +5,7 @@ class ExpenseStatus(StrEnum):
     SUBMITTED = "submitted"
     INFORMATION_REQUIRED = "information_required"
     APPROVED = "approved"
+    REJECTED = "rejected"
 
 
 class ExpenseRequiredAction(StrEnum):
