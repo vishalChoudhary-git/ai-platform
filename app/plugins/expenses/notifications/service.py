@@ -1,9 +1,10 @@
 import asyncio
 import logging
+from typing import Any
 
 from app.core.config import get_settings
 from app.core.notifications import EmailMessageData, EmailSender
-from app.plugins.expenses.models import Expense
+from app.plugins.expenses.models import Expense, ExpenseRequiredAction, ExpenseStatus
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +14,11 @@ class ExpenseNotificationService:
         self.email_sender = email_sender
 
     async def send_decision_notification(self, expense: Expense) -> None:
+        messages = [self._employee_message(expense)]
+        if self._manager_should_be_notified(expense):
+            messages.append(self._manager_message(expense))
+
         settings = get_settings()
-        messages = [self._employee_message(expense), self._manager_message(expense)]
         failures: list[Exception] = []
 
         for index, message in enumerate(messages):
@@ -45,9 +49,17 @@ class ExpenseNotificationService:
             )
         else:
             logger.info(
-                "ExpenseNotificationService.send_decision_notification: complete expense_id=%s recipients=2",
+                "ExpenseNotificationService.send_decision_notification: complete expense_id=%s recipients=%s",
                 expense.expense_id,
+                len(messages),
             )
+
+    @staticmethod
+    def _manager_should_be_notified(expense: Expense) -> bool:
+        return (
+            expense.status == ExpenseStatus.APPROVED
+            or expense.required_action == ExpenseRequiredAction.MANAGER_DECISION
+        )
 
     @staticmethod
     def _employee_message(expense: Expense) -> EmailMessageData:
@@ -65,34 +77,62 @@ class ExpenseNotificationService:
         )
 
     @staticmethod
-    def _policy_references(expense: Expense) -> list[str]:
-        references: list[str] = []
+    def _extract_policy_references(expense: Expense) -> list[dict[str, Any]]:
+        references: list[dict[str, Any]] = []
         for item in expense.decision_evidence or []:
             if not isinstance(item, dict) or not item.get("policy_id"):
                 continue
-            reference = (
-                "Policy ID: {policy_id}\n"
-                "Version: {version}\n"
-                "Rule applied: {rule}\n"
-                "Condition: {condition}\n"
-                "Policy action: {action}"
-            ).format(
-                policy_id=item["policy_id"],
-                version=item.get("version") or "unknown",
-                rule=item.get("rule_applied") or "unknown",
-                condition=item.get("condition") or "unknown",
-                action=item.get("action") or "unknown",
-            )
-            if reference not in references:
-                references.append(reference)
+            if item not in references:
+                references.append(item)
         return references
 
     @classmethod
-    def _manager_message(cls, expense: Expense) -> EmailMessageData:
-        required_action = expense.required_action.value
-        policy_references = cls._policy_references(expense)
+    def _policy_reference_section(cls, expense: Expense) -> str:
+        references = cls._extract_policy_references(expense)
+        if not references:
+            return "Policy reference: Not available in the decision evidence."
 
-        if required_action == "manager_decision":
+        sections: list[str] = []
+        for index, reference in enumerate(references, start=1):
+            sections.append(
+                "\n".join(
+                    [
+                        f"Policy reference {index}:",
+                        f"Policy ID: {reference.get('policy_id') or 'Not provided'}",
+                        f"Version: {reference.get('version') or 'Not provided'}",
+                        f"Rule applied: {reference.get('rule_applied') or 'Not provided'}",
+                        f"Condition: {reference.get('condition') or 'Not provided'}",
+                        f"Policy action: {reference.get('action') or 'Not provided'}",
+                    ]
+                )
+            )
+        return "\n\n".join(sections)
+
+    @staticmethod
+    def _display_amount(expense: Expense) -> str:
+        if expense.amount is not None:
+            if expense.currency:
+                return f"{expense.currency} {expense.amount}"
+            return str(expense.amount)
+
+        for item in expense.decision_evidence or []:
+            if not isinstance(item, dict):
+                continue
+            amount = item.get("amount")
+            if amount is None:
+                continue
+            currency = item.get("currency")
+            if currency:
+                return f"{currency} {amount} (from receipt evidence)"
+            return f"{amount} (from receipt evidence; currency not provided)"
+
+        return "Not provided"
+
+    @classmethod
+    def _manager_message(cls, expense: Expense) -> EmailMessageData:
+        required_action = expense.required_action
+
+        if required_action == ExpenseRequiredAction.MANAGER_DECISION:
             subject = f"Action Required: Expense {expense.expense_id} - Policy Review"
             action_section = (
                 "ACTION REQUIRED: POLICY REVIEW\n\n"
@@ -101,22 +141,23 @@ class ExpenseNotificationService:
                 f"Policy finding:\n{expense.decision_reason or 'No additional reason provided.'}\n\n"
                 "Required action: Manager approval or rejection is required."
             )
-        elif required_action in {"additional_information", "additional_document"}:
+        elif required_action in {
+            ExpenseRequiredAction.ADDITIONAL_INFORMATION,
+            ExpenseRequiredAction.ADDITIONAL_DOCUMENT,
+        }:
             subject = f"Expense {expense.expense_id} - Review Notice"
             action_section = (
                 "REVIEW NOTICE\n\n"
                 "The automated expense review identified a policy exception or incomplete evidence.\n\n"
                 f"Finding:\n{expense.decision_reason or 'No additional reason provided.'}\n\n"
-                f"Required action: {required_action}.\n"
+                f"Required action: {required_action.value}.\n"
                 "Additional employee information/evidence is required before the expense can be finalized."
             )
         else:
             subject = f"Expense {expense.expense_id} - {expense.status.value}"
             action_section = "No manager action is currently required."
 
-        policy_section = ""
-        if policy_references:
-            policy_section = "\n\nPolicy reference used for this evaluation:\n\n" + "\n\n".join(policy_references)
+        policy_section = cls._policy_reference_section(expense)
 
         return EmailMessageData(
             to=expense.manager_email,
@@ -126,12 +167,12 @@ class ExpenseNotificationService:
                 f"Expense {expense.expense_id} for {expense.employee_name} has been evaluated.\n\n"
                 "Expense details:\n"
                 f"Employee: {expense.employee_name}\n"
-                f"Amount: {expense.amount} {expense.currency or ''}\n"
+                f"Amount: {cls._display_amount(expense)}\n"
                 f"Category: {expense.category}\n"
                 f"Status: {expense.status.value}\n"
-                f"Required action: {required_action}\n\n"
-                f"{action_section}"
-                f"{policy_section}\n\n"
+                f"Required action: {required_action.value}\n\n"
+                f"{action_section}\n\n"
+                f"Policy reference used for this evaluation:\n\n{policy_section}\n\n"
                 "Please review the expense through the Expense workflow/API.\n"
             ),
         )
