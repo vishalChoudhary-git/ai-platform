@@ -66,4 +66,4 @@ class ExpenseApprovalService:
 
         await self.session.commit()
         await self.notification_service.send_decision_notification(expense)
-        return expense
+        return await self.expense_service.get_by_id(expense.id)
