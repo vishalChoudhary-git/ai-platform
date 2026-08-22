@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -55,12 +55,10 @@ class ExpenseApprovalService:
             else ExpenseApprovalStatus.REJECTED
         )
         approval.reason = decision.reason
-        approval.resolved_at = datetime.now(timezone.utc)
+        approval.resolved_at = datetime.now(UTC)
 
         expense.status = (
-            ExpenseStatus.APPROVED
-            if decision.decision == "approved"
-            else ExpenseStatus.REJECTED
+            ExpenseStatus.APPROVED if decision.decision == "approved" else ExpenseStatus.REJECTED
         )
         expense.required_action = ExpenseRequiredAction.NONE
         if decision.reason:

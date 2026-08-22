@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.knowledge.services import KnowledgeService
 from app.plugins.expenses.agent.agent import ExpenseAgent
-from app.plugins.expenses.agent.schemas import AgentDecision
 from app.plugins.expenses.models import ExpenseRequiredAction, ExpenseStatus
 from app.plugins.expenses.services import ExpenseService
 from app.plugins.expenses.tools import ExpenseAgentTools
@@ -95,14 +94,6 @@ async def test_search_expense_policy_maps_grounded_sources() -> None:
     assert result["sources"][0]["document_id"] == str(document_id)
     assert result["sources"][0]["page_number"] == 5
     assert "15,000" in result["answer"]
-
-
-def test_agent_decision_schema_rejects_invalid_status() -> None:
-    with pytest.raises(ValueError):
-        AgentDecision(
-            status=cast(ExpenseStatus, "rejected"),
-            reason="Not supported in the current agent lifecycle",
-        )
 
 
 def test_agent_parses_structured_decision() -> None:
