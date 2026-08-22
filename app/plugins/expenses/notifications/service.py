@@ -57,7 +57,7 @@ class ExpenseNotificationService:
     @staticmethod
     def _manager_should_be_notified(expense: Expense) -> bool:
         return (
-            expense.status == ExpenseStatus.APPROVED
+            expense.status in {ExpenseStatus.APPROVED, ExpenseStatus.REJECTED}
             or expense.required_action == ExpenseRequiredAction.MANAGER_DECISION
         )
 
@@ -110,10 +110,9 @@ class ExpenseNotificationService:
 
     @staticmethod
     def _display_amount(expense: Expense) -> str:
+        currency = expense.currency or "INR"
         if expense.amount is not None:
-            if expense.currency:
-                return f"{expense.currency} {expense.amount}"
-            return str(expense.amount)
+            return f"{currency} {expense.amount}"
 
         for item in expense.decision_evidence or []:
             if not isinstance(item, dict):
@@ -121,10 +120,8 @@ class ExpenseNotificationService:
             amount = item.get("amount")
             if amount is None:
                 continue
-            currency = item.get("currency")
-            if currency:
-                return f"{currency} {amount} (from receipt evidence)"
-            return f"{amount} (from receipt evidence; currency not provided)"
+            evidence_currency = item.get("currency") or currency
+            return f"{evidence_currency} {amount} (from receipt evidence)"
 
         return "Not provided"
 
@@ -140,6 +137,13 @@ class ExpenseNotificationService:
                 "and requires your decision.\n\n"
                 f"Policy finding:\n{expense.decision_reason or 'No additional reason provided.'}\n\n"
                 "Required action: Manager approval or rejection is required."
+            )
+        elif expense.status == ExpenseStatus.REJECTED:
+            subject = f"Expense {expense.expense_id} - Rejected"
+            action_section = (
+                "FINAL MANAGER DECISION\n\n"
+                "This expense was rejected by the manager.\n\n"
+                f"Decision reason:\n{expense.decision_reason or 'No additional reason provided.'}"
             )
         elif required_action in {
             ExpenseRequiredAction.ADDITIONAL_INFORMATION,
