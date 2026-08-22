@@ -15,6 +15,8 @@ from app.plugins.expenses.services import ExpenseService
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_EXPENSE_CURRENCY = "INR"
+
 
 class ExpenseAgentTools:
     def __init__(
@@ -41,7 +43,7 @@ class ExpenseAgentTools:
             "category": expense.category,
             "description": expense.description,
             "amount": str(expense.amount) if expense.amount is not None else None,
-            "currency": expense.currency,
+            "currency": expense.currency or DEFAULT_EXPENSE_CURRENCY,
             "expense_date": expense.expense_date.isoformat() if expense.expense_date else None,
             "status": expense.status.value,
             "documents": [
