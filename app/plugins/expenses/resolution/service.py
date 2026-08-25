@@ -51,6 +51,7 @@ class ExpenseResolutionService:
         )
         decision = await agent.resolve(expense_id)
 
+        expense = await self.expense_service.get_by_business_id(expense_id)
         policy_result = await tools.get_expense_policy(expense_id)
         policy = policy_result.get("policy")
         if policy is None:
@@ -73,13 +74,13 @@ class ExpenseResolutionService:
                 decision.reason = (
                     f"A published expense policy (Policy {policy['policy_id']} version "
                     f"{policy['version']}) exists, but no applicable rule covers the "
-                    f"'{(await self.expense_service.get_by_business_id(expense_id)).category}' "
-                    "expense category. Manager review is required."
+                    f"'{expense.category}' expense category. Manager review is required."
                 )
                 logger.warning(
-                    "ExpenseResolutionService.resolve: no_applicable_policy_rule expense_id=%s policy=%s",
+                    "ExpenseResolutionService.resolve: no_applicable_policy_rule expense_id=%s policy=%s category=%s",
                     expense_id,
                     policy["policy_id"],
+                    expense.category,
                 )
             else:
                 for rule in applicable_rules:
@@ -94,7 +95,6 @@ class ExpenseResolutionService:
                     if policy_evidence not in decision.evidence:
                         decision.evidence.append(policy_evidence)
 
-        expense = await self.expense_service.get_by_business_id(expense_id)
         expense.status = decision.status
         expense.decision_reason = decision.reason
         expense.required_action = decision.required_action
