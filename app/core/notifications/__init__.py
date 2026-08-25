@@ -1,15 +1,15 @@
 from .email import (
+    DisabledEmailSender,
     EmailMessageData,
     EmailSender,
     MailtrapEmailSender,
-    SmtpEmailSender,
     get_email_sender,
 )
 
 __all__ = [
+    "DisabledEmailSender",
     "EmailMessageData",
     "EmailSender",
     "MailtrapEmailSender",
-    "SmtpEmailSender",
     "get_email_sender",
 ]
