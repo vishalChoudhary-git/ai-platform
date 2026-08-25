@@ -76,6 +76,16 @@ class ExpenseResolutionService:
                     f"{policy['version']}) exists, but no applicable rule covers the "
                     f"'{expense.category}' expense category. Manager review is required."
                 )
+                decision.evidence.append(
+                    {
+                        "policy_id": policy["policy_id"],
+                        "version": policy["version"],
+                        "rule_applied": None,
+                        "condition": None,
+                        "action": None,
+                        "category": expense.category,
+                    }
+                )
                 logger.warning(
                     "ExpenseResolutionService.resolve: no_applicable_policy_rule expense_id=%s policy=%s category=%s",
                     expense_id,
