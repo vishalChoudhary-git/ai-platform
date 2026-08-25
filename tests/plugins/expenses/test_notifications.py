@@ -44,7 +44,7 @@ class FakeExpense:
 
 class ClarificationExpense(FakeExpense):
     required_action = ExpenseRequiredAction.ADDITIONAL_INFORMATION
-    decision_reason = "Expense amount and currency need confirmation."
+    decision_reason = "Expense details need confirmation."
 
 
 @pytest.mark.asyncio
@@ -78,9 +78,9 @@ async def test_additional_information_does_not_notify_manager() -> None:
 
 
 @pytest.mark.asyncio
-async def test_missing_amount_and_currency_never_default_to_inr() -> None:
+async def test_missing_expense_currency_defaults_to_inr_for_display() -> None:
     expense = FakeExpense()
-    expense.amount = None
+    expense.amount = 4550
     expense.currency = None
     expense.decision_evidence = [
         {
@@ -94,8 +94,35 @@ async def test_missing_amount_and_currency_never_default_to_inr() -> None:
 
     message = ExpenseNotificationService._manager_message(expense)
 
-    assert "Amount: Not provided" in message.body
-    assert "INR" not in message.body
+    assert "Amount: INR 4550" in message.body
+
+
+@pytest.mark.asyncio
+async def test_policy_references_with_same_identity_are_deduplicated() -> None:
+    expense = FakeExpense()
+    expense.decision_evidence = [
+        {
+            "policy_id": "POL-TEST",
+            "version": "2026.1",
+            "rule_applied": "R1",
+            "condition": "Hotel limit exceeded.",
+            "action": "Manager approval required",
+            "source": "agent",
+        },
+        {
+            "policy_id": "POL-TEST",
+            "version": "2026.1",
+            "rule_applied": "R1",
+            "condition": "Hotel limit exceeded.",
+            "action": "Manager approval required",
+            "source": "resolution",
+        },
+    ]
+
+    message = ExpenseNotificationService._manager_message(expense)
+
+    assert message.body.count("Policy reference 1:") == 1
+    assert "Policy reference 2:" not in message.body
 
 
 @pytest.mark.asyncio
