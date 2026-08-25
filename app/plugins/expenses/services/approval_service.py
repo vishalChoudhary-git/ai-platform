@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.notifications import SmtpEmailSender
+from app.core.notifications import get_email_sender
 
 from ..models import ExpenseApproval, ExpenseApprovalStatus, ExpenseRequiredAction, ExpenseStatus
 from ..notifications import ExpenseNotificationService
@@ -16,7 +16,7 @@ class ExpenseApprovalService:
     def __init__(self, session: AsyncSession, expense_service: ExpenseService) -> None:
         self.session = session
         self.expense_service = expense_service
-        self.notification_service = ExpenseNotificationService(SmtpEmailSender.from_settings())
+        self.notification_service = ExpenseNotificationService(get_email_sender())
 
     async def decide(
         self,
