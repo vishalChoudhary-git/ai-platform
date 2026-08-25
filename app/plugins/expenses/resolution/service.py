@@ -10,6 +10,7 @@ from app.plugins.expenses.models import (
     ExpenseApproval,
     ExpenseApprovalStatus,
     ExpenseRequiredAction,
+    ExpenseStatus,
 )
 from app.plugins.expenses.notifications import ExpenseNotificationService
 from app.plugins.expenses.services import ExpenseService
@@ -49,6 +50,49 @@ class ExpenseResolutionService:
             tools=tools,
         )
         decision = await agent.resolve(expense_id)
+
+        policy_result = await tools.get_expense_policy(expense_id)
+        policy = policy_result.get("policy")
+        if policy is None:
+            decision.status = ExpenseStatus.INFORMATION_REQUIRED
+            decision.required_action = ExpenseRequiredAction.MANAGER_DECISION
+            decision.reason = (
+                "No published expense policy is available for this expense. "
+                "Manager review is required before the expense can be finalized."
+            )
+            logger.warning(
+                "ExpenseResolutionService.resolve: policy_unavailable expense_id=%s error=%s",
+                expense_id,
+                policy_result.get("error"),
+            )
+        else:
+            applicable_rules = policy.get("applicable_rules", [])
+            if not applicable_rules:
+                decision.status = ExpenseStatus.INFORMATION_REQUIRED
+                decision.required_action = ExpenseRequiredAction.MANAGER_DECISION
+                decision.reason = (
+                    f"A published expense policy (Policy {policy['policy_id']} version "
+                    f"{policy['version']}) exists, but no applicable rule covers the "
+                    f"'{(await self.expense_service.get_by_business_id(expense_id)).category}' "
+                    "expense category. Manager review is required."
+                )
+                logger.warning(
+                    "ExpenseResolutionService.resolve: no_applicable_policy_rule expense_id=%s policy=%s",
+                    expense_id,
+                    policy["policy_id"],
+                )
+            else:
+                for rule in applicable_rules:
+                    policy_evidence = {
+                        "policy_id": policy["policy_id"],
+                        "version": policy["version"],
+                        "rule_applied": rule.get("rule_id"),
+                        "condition": rule.get("condition"),
+                        "action": rule.get("action"),
+                        "category": rule.get("category"),
+                    }
+                    if policy_evidence not in decision.evidence:
+                        decision.evidence.append(policy_evidence)
 
         expense = await self.expense_service.get_by_business_id(expense_id)
         expense.status = decision.status
