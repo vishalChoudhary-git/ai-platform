@@ -15,6 +15,8 @@ from app.plugins.expenses.services import ExpenseService
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_EXPENSE_CURRENCY = "INR"
+
 
 class ExpenseAgentTools:
     def __init__(
@@ -41,7 +43,7 @@ class ExpenseAgentTools:
             "category": expense.category,
             "description": expense.description,
             "amount": str(expense.amount) if expense.amount is not None else None,
-            "currency": expense.currency,
+            "currency": expense.currency or DEFAULT_EXPENSE_CURRENCY,
             "expense_date": expense.expense_date.isoformat() if expense.expense_date else None,
             "status": expense.status.value,
             "documents": [
@@ -113,15 +115,35 @@ class ExpenseAgentTools:
             .limit(1)
         )
         if policy is None:
-            return {"expense_id": expense_id, "policy": None}
+            logger.warning(
+                "ExpenseAgentTools.get_expense_policy: no_published_policy expense_id=%s",
+                expense_id,
+            )
+            return {
+                "expense_id": expense_id,
+                "policy": None,
+                "error": "No published expense policy is available for this expense.",
+            }
 
         snapshot = await self.policy_cache.get(policy.checksum)
         if snapshot is None:
+            logger.warning(
+                "ExpenseAgentTools.get_expense_policy: policy_cache_miss expense_id=%s policy=%s",
+                expense_id,
+                policy.policy_id,
+            )
             return {
                 "expense_id": expense_id,
                 "policy": None,
                 "error": "Published policy is not available in the cache.",
             }
+
+        normalized_category = expense.category.strip().casefold()
+        applicable_rules = [
+            rule
+            for rule in snapshot.rules
+            if rule.category.strip().casefold() == normalized_category
+        ]
 
         result = {
             "expense_id": expense_id,
@@ -131,13 +153,16 @@ class ExpenseAgentTools:
                 "checksum": snapshot.checksum,
                 "effective_from": snapshot.effective_from,
                 "rules": [rule.model_dump() for rule in snapshot.rules],
+                "applicable_rules": [rule.model_dump() for rule in applicable_rules],
             },
         }
         logger.info(
-            "ExpenseAgentTools.get_expense_policy: complete expense_id=%s policy=%s rules=%s",
+            "ExpenseAgentTools.get_expense_policy: complete expense_id=%s policy=%s rules=%s applicable_rules=%s category=%s",
             expense_id,
             snapshot.policy_id,
             len(snapshot.rules),
+            len(applicable_rules),
+            expense.category,
         )
         return result
 

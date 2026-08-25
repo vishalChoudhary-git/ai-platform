@@ -119,9 +119,7 @@ class ExpenseAgent:
                     tool_call.function.arguments,
                     expense_id,
                 )
-                state.tool_results.append(
-                    {"tool": tool_call.function.name, "result": result}
-                )
+                state.tool_results.append({"tool": tool_call.function.name, "result": result})
                 logger.info(
                     "ExpenseAgent._execute_tool: complete expense_id=%s round=%s tool=%s",
                     expense_id,
@@ -151,12 +149,26 @@ Your goal is to resolve an expense according to company policy.
 
 You may investigate using the provided read-only tools. Decide what information you need and which tool to call. Do not invent policy rules or missing facts.
 
+Important expense defaults and evidence rules:
+- The application's default expense currency is INR.
+- Missing currency alone is NOT missing information and must NEVER cause required_action=additional_information.
+- If the expense currency is not supplied, evaluate the expense using INR.
+- If the expense amount is missing from the expense request, first use parsed receipt/supporting-document evidence to determine the amount when available.
+- Only request additional information when a decision-critical value cannot be determined from the expense request, available evidence, or applicable policy.
+
+Policy applicability is mandatory:
+- A published policy document is not enough by itself; an applicable rule must cover the expense category before you can approve the expense.
+- The get_expense_policy tool returns both all published rules and the rules applicable to the expense category.
+- If no published policy is available, do NOT approve. Use status=information_required and required_action=manager_decision.
+- If a published policy exists but no applicable rule covers the expense category, do NOT approve. Use status=information_required and required_action=manager_decision.
+- Do not reject an expense merely because the receipt appears to describe a different type of item or category. Receipt contents are evidence to investigate, not an automatic category validation failure.
+
 Recommended investigation sequence:
 1. Get the expense details.
 2. Get the parsed receipt/supporting-document evidence.
-3. Get the applicable published policy rules.
+3. Get the published policy and inspect applicable_rules.
 4. Use policy search when you need additional grounded policy context.
-5. When enough evidence is available, return the final decision.
+5. When enough evidence is available and an applicable rule exists, return the final decision.
 
 You may return only these expense statuses:
 - submitted
@@ -171,12 +183,12 @@ Required actions:
 - additional_document
 - manager_decision
 
-Do not approve an expense when required evidence is missing, the applicable policy is unavailable, or the policy requires manager decision.
+Do not approve an expense when required evidence is missing, the applicable policy is unavailable, no applicable policy rule exists, or the policy requires manager decision.
 
 Do not call tools for side effects. This agent version is investigation-only.
 
 When you have enough evidence, return a JSON object matching the AgentDecision schema with:
-status, reason, required_action, evidence, missing_information.
+status, reason, required_action, evidence (an array of evidence objects), missing_information.
 """
 
     @staticmethod
@@ -212,7 +224,7 @@ status, reason, required_action, evidence, missing_information.
                 "type": "function",
                 "function": {
                     "name": "get_expense_policy",
-                    "description": "Retrieve the published policy version applicable to the expense date, including normalized policy rules.",
+                    "description": "Retrieve the published policy version applicable to the expense date, including all normalized rules and the subset of rules that apply to the expense category.",
                     "parameters": {
                         "type": "object",
                         "properties": {"expense_id": {"type": "string"}},

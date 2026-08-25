@@ -70,7 +70,7 @@ class Expense(UUIDMixin, TimestampMixin, Base):
         server_default=ExpenseRequiredAction.NONE.value,
         nullable=False,
     )
-    decision_evidence: Mapped[dict[str, Any] | None] = mapped_column(
+    decision_evidence: Mapped[list[dict[str, Any]] | None] = mapped_column(
         postgresql.JSONB,
         nullable=True,
     )
