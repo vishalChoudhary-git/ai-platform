@@ -79,10 +79,19 @@ class ExpenseNotificationService:
     @staticmethod
     def _extract_policy_references(expense: Expense) -> list[dict[str, Any]]:
         references: list[dict[str, Any]] = []
+        seen: set[tuple[str, str, str, str, str]] = set()
         for item in expense.decision_evidence or []:
             if not isinstance(item, dict) or not item.get("policy_id"):
                 continue
-            if item not in references:
+            key = (
+                str(item.get("policy_id") or ""),
+                str(item.get("version") or ""),
+                str(item.get("rule_applied") or ""),
+                str(item.get("condition") or ""),
+                str(item.get("action") or ""),
+            )
+            if key not in seen:
+                seen.add(key)
                 references.append(item)
         return references
 
