@@ -11,6 +11,7 @@ dependencies = [
     "boto3>=1.43.62",
     "fastapi>=0.139.0",
     "httpx>=0.28.0",
+    "mailtrap>=2.0.0",
     "openai>=2.44.0",
     "psycopg[binary]>=3.3.4",
     "pydantic-settings>=2.14.2",
