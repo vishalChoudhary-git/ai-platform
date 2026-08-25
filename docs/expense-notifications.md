@@ -11,63 +11,71 @@ ExpenseNotificationService
         ↓
 EmailSender abstraction
         ↓
-SMTP transport
+Mailtrap API / SDK
 ```
 
-## Notification rule
+## Notification rules
 
-Every completed Expense decision sends a notification request to both:
+The employee is notified for every completed expense decision.
+
+The manager is notified when the decision requires manager visibility or action:
 
 ```text
-employee_email
-manager_email
+approved
+    → employee + manager
+
+rejected
+    → employee + manager
+
+information_required + manager_decision
+    → employee + manager
+
+information_required + additional_information
+    → employee only
+
+information_required + additional_document
+    → employee only
 ```
 
-This is independent of the expense status.
-
-### Approved
-
-The employee is informed that the expense was approved. The manager is informed of the evaluated result; no approval action is required.
-
-### Information required / manager decision
-
-The employee is informed that additional review is required. The manager is informed that a manager decision is required.
-
-The corresponding `ExpenseApproval` record is created separately by `ExpenseResolutionService` and is not created for ordinary approved expenses.
+For `manager_decision`, the corresponding `ExpenseApproval(PENDING)` record is created separately by `ExpenseResolutionService`.
 
 ## Delivery behavior
 
 Notification delivery happens **after the expense decision is committed**. A delivery failure must not roll back the persisted expense decision.
 
-The two recipient messages are sent independently. One failed recipient must not prevent an attempt for the other recipient.
+Recipient deliveries are attempted independently. One failed recipient must not prevent an attempt for the other recipient.
 
-## Development configuration
+A configurable delay can be inserted between recipients for development/test provider rate limits:
 
-The current development transport is generic SMTP and can be pointed at a sandbox such as Mailtrap.
+```text
+EMAIL_RECIPIENT_DELAY_SECONDS=1.1
+```
+
+## Provider configuration
+
+The application uses the Mailtrap Python SDK/API for email delivery. No SMTP host, port, username, or password is required by the application.
 
 ```text
 EMAIL_ENABLED=true
-EMAIL_SMTP_HOST=sandbox.smtp.mailtrap.io
-EMAIL_SMTP_PORT=2525
-EMAIL_SMTP_USERNAME=<sandbox username>
-EMAIL_SMTP_PASSWORD=<sandbox password>
-EMAIL_SMTP_USE_TLS=true
+MAILTRAP_API_TOKEN=<provider token>
 EMAIL_FROM_ADDRESS=no-reply@example.com
 EMAIL_FROM_NAME="AI Platform"
 ```
 
-Mailtrap Email Sandbox provides SMTP credentials for a safe testing inbox; its current documentation lists `sandbox.smtp.mailtrap.io` and port `2525` as a standard test configuration. The application intentionally does not depend on Mailtrap-specific SDKs.
+Use a Mailtrap sandbox/test token for development and a production sending token for production. The application code uses the same `MailtrapEmailSender`; the environment/secret configuration determines which token is supplied.
 
-## Production direction
+## Production
 
-Keep `ExpenseNotificationService` independent of provider details. A future provider can replace the SMTP sender without changing Expense workflow code.
+`ENVIRONMENT=production` does not switch to SMTP. The sender remains Mailtrap API/SDK based. Production delivery therefore requires a production-capable Mailtrap sending token rather than sandbox credentials.
 
 ## Testing
 
 Unit tests should verify:
 
-- exactly two notification requests are created per decision
+- employee notification is always attempted
+- manager notification is attempted for approved/rejected decisions
+- manager notification is attempted for `manager_decision`
+- manager is not notified for ordinary additional-information/document requests
 - employee address is used for the employee message
 - manager address is used for the manager message
-- approved and manager-decision statuses both notify both recipients
 - failure of one delivery does not prevent the second delivery attempt
