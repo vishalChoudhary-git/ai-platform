@@ -31,8 +31,9 @@ class Settings(BaseSettings):
     redis_url: str
 
     email_enabled: bool = False
-    email_smtp_host: str = "sandbox.smtp.mailtrap.io"
-    email_smtp_port: int = 2525
+    mailtrap_api_token: str = ""
+    email_smtp_host: str = "smtp.example.com"
+    email_smtp_port: int = 587
     email_smtp_username: str = ""
     email_smtp_password: str = ""
     email_smtp_use_tls: bool = True
