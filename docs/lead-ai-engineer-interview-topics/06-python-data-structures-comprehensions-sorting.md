@@ -5,6 +5,27 @@
 ## Focus
 Lists, dictionaries, sets, tuples, comprehensions, `enumerate`, `zip`, `sorted`, `max`, `min`, hashing and common complexity trade-offs.
 
+## Interview feedback — HIGH PRIORITY
+
+**`enumerate()` was explicitly asked in the interview.** Treat it as an interview-revision item, not just a convenience function.
+
+```python
+for rank, document in enumerate(results, start=1):
+    print(rank, document["id"])
+```
+
+Use `enumerate()` when you need both the item and its index/rank without manually maintaining a counter.
+
+### Likely interview question
+
+**What is `enumerate()` and why would you use it?**
+
+> `enumerate()` lets me iterate over a collection while getting both the current index and the value. It makes ranking/indexing logic cleaner than maintaining a separate counter.
+
+### Project connection
+
+In retrieval code, `enumerate()` is useful when assigning ranks to vector or keyword results before calculating RRF scores.
+
 ## Completed
 - lists, dictionaries, sets and tuples
 - loops and conditions
@@ -127,7 +148,7 @@ Use the data structure that matches the operation you need rather than choosing 
 - [x] filtering
 - [x] list comprehension
 - [x] `dict.get()`
-- [x] `enumerate()`
+- [x] `enumerate()` **(HIGH PRIORITY — explicitly asked in interview)**
 - [x] `sorted()`
 - [x] `.sort()`
 - [x] `key=lambda`
