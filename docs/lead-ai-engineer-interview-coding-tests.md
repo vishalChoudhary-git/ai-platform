@@ -37,19 +37,16 @@ The attempt correctly used list iteration, dictionary access, filtering, `.sort(
 Correct patterns:
 
 ```python
-# Filter and build a list
 high_score_ids = []
 for document in results:
     if document["score"] >= 0.8:
         high_score_ids.append(document["id"])
 
-# Sort the existing list in place
 results.sort(
     key=lambda document: document["score"],
     reverse=True,
 )
 
-# Print ranking
 for rank, document in enumerate(results, start=1):
     print(f"{rank}. {document['id']} - {document['score']}")
 ```
@@ -81,28 +78,22 @@ Tasks:
 ### User attempt
 
 ```python
-# Print only PDF documents.
 for doc in documents:
     print(f"{doc['id']}")
 
-# Create a list containing only PDF IDs.
 doc_list = []
 for doc in documents:
     doc_list.append(doc["id"])
 print(f"{doc_list}")
 
-# Find the document with the highest number of pages.
 sorted_results = sorted(
     documents,
     key=lambda doc: doc["pages"],
     reverse=True
 )
 print(f"{sorted_results[0]}")
-
-# Sort documents by pages descending.
 print(f"{sorted_results}")
 
-# Create a list containing only the page counts.
 page_list = []
 for doc in documents:
     page_list.append(doc["pages"])
@@ -120,28 +111,23 @@ print(f"{page_list}")
 Correct patterns:
 
 ```python
-# 1. PDFs
 for doc in documents:
     if doc["type"] == "pdf":
         print(doc["id"])
 
-# 2. PDF IDs
 pdf_ids = []
 for doc in documents:
     if doc["type"] == "pdf":
         pdf_ids.append(doc["id"])
 
-# 3. Highest-page document
 highest = max(documents, key=lambda doc: doc["pages"])
 
-# 4. Sort descending
 sorted_documents = sorted(
     documents,
     key=lambda doc: doc["pages"],
     reverse=True,
 )
 
-# 5. Page counts
 page_counts = [doc["pages"] for doc in documents]
 ```
 
@@ -315,99 +301,110 @@ Production concepts connected to this exercise:
 
 ---
 
-## Theory-first topics covered without a coding exercise yet
+### Topic 7 — Decorator micro-exercise / revision
 
-### Pydantic
+The important interview definition we chose to remember:
 
-Theory is maintained in `docs/lead-ai-engineer-interview-topics/01-python-production.md`. We will not spend a separate exercise on every Pydantic feature. We will do one focused hands-on model later if needed.
+> **A decorator is a function that takes a function as an argument and returns a function.**
 
-Key points to revise:
+Example:
 
-- `BaseModel`
-- typed fields and defaults
-- `field_validator`
-- `Enum`
-- `str | None`
-- nested models
-- request/response models
-- runtime validation vs type hints
-- Pydantic vs dataclasses
+```python
+def decorator(func):
+    def wrapper():
+        print("Transaction Initiated")
+        func()
+        print("Transaction Completed")
 
-### Project-based design-pattern questions
+    return wrapper
 
-These are not separate syntax drills. They are interview questions we should be able to answer using our real `ai-platform` and `ai-document-intelligence` implementations.
+@decorator
+def hello():
+    print("Executing all steps of transaction")
 
-#### Question 1 — Tell me about chunking in your AI system.
+hello()
+```
+
+Key transformation:
+
+```python
+@decorator
+def hello():
+    ...
+```
+
+is equivalent in concept to:
+
+```python
+hello = decorator(hello)
+```
+
+Production-safe wrapper:
+
+```python
+from functools import wraps
+
+def log_call(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        return result
+
+    return wrapper
+```
+
+### Revision points
+
+- decorator receives a callable and returns a callable
+- `@decorator` is decorator syntax
+- wrapper commonly uses `*args` and `**kwargs`
+- `functools.wraps` preserves function metadata
+- common use cases: logging, timing, authorization, caching, retries, instrumentation
+- FastAPI's `@app.get()` / `@app.post()` are a practical framework example of decorators
+
+---
+
+## Project-based design-pattern questions
+
+These are not separate syntax drills. They are interview questions to answer using our real project implementations.
+
+### Question — Tell me about chunking in your AI system.
 
 Expected answer structure:
 
 > "Our document-intelligence pipeline separates parsing from chunking. The parser produces a normalized `ParsedDocument`, and the chunker converts that into `DocumentChunk` objects suitable for retrieval. We preserve useful provenance such as document/page context. Chunk size and overlap are treated as tunable retrieval parameters, and I would validate those choices using retrieval and end-to-end evaluation rather than assuming one universal size."
 
-#### Question 2 — Why did you separate parsing and chunking?
-
-Expected answer structure:
+### Question — Why did you separate parsing and chunking?
 
 > "They have different responsibilities. Parsing extracts and normalizes document structure, while chunking decides how that structured content should be divided into retrieval units. Keeping them separate lets us change the chunking strategy without changing the parser and lets the chunker operate on a standardized document representation."
 
-#### Question 3 — Why use a `BaseChunker` abstraction?
-
-Expected answer structure:
+### Question — Why use a `BaseChunker` abstraction?
 
 > "It gives us a stable chunking contract and allows different chunking strategies to be introduced independently of the rest of the pipeline. It also gives us a clean testing seam."
 
-#### Question 4 — Why not use a fixed chunk size everywhere?
-
-Expected answer structure:
+### Question — Why not use a fixed chunk size everywhere?
 
 > "Document structure and query behavior vary. I treat chunk size and overlap as tunable parameters and evaluate them against representative retrieval data, balancing retrieval quality, context size, latency and cost."
 
-#### Question 5 — What happens if chunks are too small?
+### Question — Why preserve metadata with a chunk?
 
-Possible points:
+> "For citations and provenance, metadata/permission filtering, and debugging retrieval behavior."
 
-- insufficient context
-- more fragments
-- more retrieval candidates
-- more metadata/embedding overhead
-- related statements may be separated
+### Question — Why is chunking evaluated through retrieval instead of only looking at chunks?
 
-#### Question 6 — What happens if chunks are too large?
-
-Possible points:
-
-- irrelevant content enters the retrieved context
-- larger prompts
-- higher token cost
-- higher latency
-- potentially weaker signal-to-noise ratio
-
-#### Question 7 — Why preserve metadata with a chunk?
-
-Expected points:
-
-- citations and provenance
-- page/document identification
-- metadata/permission filtering
-- debugging retrieval
-- downstream ranking and auditing
-
-#### Question 8 — Why is chunking evaluated through retrieval instead of only looking at chunks?
-
-Expected answer structure:
-
-> "The purpose of chunking is to support retrieval and answer generation. A chunk can look reasonable to a developer but still perform poorly for actual queries. Therefore I would evaluate chunking using retrieval metrics and downstream answer quality, while also considering latency and cost."
+> "The purpose of chunking is to support retrieval and answer generation. A chunk can look reasonable to a developer but still perform poorly for actual queries, so I evaluate it using retrieval metrics and downstream answer quality while considering latency and cost."
 
 ### Project-based abstraction questions
 
-#### Question 9 — Why did you introduce `StorageProvider`?
+#### Why did you introduce `StorageProvider`?
 
 > "The application depends on a storage capability rather than directly on Cloudflare R2. `StorageProvider` defines the contract while `CloudflareR2StorageProvider` contains vendor-specific details. This gives us a replacement and testing boundary."
 
-#### Question 10 — Where is dependency injection in your project?
+#### Where is dependency injection in your project?
 
 > "Our FastAPI dependency layer constructs the repository and storage dependencies and passes them into services. The services therefore don't need to create their infrastructure dependencies themselves."
 
-#### Question 11 — Why is `Reranker` an abstraction?
+#### Why is `Reranker` an abstraction?
 
 > "The retrieval service should not be coupled to a specific reranking model/provider. By depending on the `Reranker` contract, we can change the reranking implementation independently of retrieval orchestration."
 
@@ -427,6 +424,7 @@ Expected answer structure:
 - [x] Dependency injection — project example
 - [x] Strategy concept — project example
 - [x] Chunking theory + project-based interview questions
+- [x] Decorator theory and framework connection
 - [ ] Pydantic hands-on exercise
 - [ ] Full parser Strategy/Plugin implementation
 - [ ] RRF
