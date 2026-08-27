@@ -52,9 +52,32 @@ Learn → Basic example → Medium example → AI/RAG example
 | 24 | [AWS for AI Engineering](lead-ai-engineer-interview-topics/25-aws-for-ai-engineering.md) | Planned |
 | 25 | [Security & Multi-Tenancy](lead-ai-engineer-interview-topics/26-security-multi-tenancy-lead-manager.md) | Planned |
 | 26 | [Lead/Manager Round — Leadership, Ownership & Behavioral Engineering](lead-ai-engineer-interview-topics/26-lead-manager-round.md) | Planned |
-| 27 | **[RAG Evaluation & Observability — Ragas + LangSmith](lead-ai-engineer-interview-topics/27-rag-evaluation-observability-ragas-langsmith.md)** | **Added / Planned** |
+| 27 | [RAG Evaluation & Observability — Ragas + LangSmith](lead-ai-engineer-interview-topics/27-rag-evaluation-observability-ragas-langsmith.md) | **Added / Planned** |
+| 28 | [LangChain](lead-ai-engineer-interview-topics/28-langchain.md) | **Added / Planned** |
+| 29 | [LangGraph](lead-ai-engineer-interview-topics/29-langgraph.md) | **Added / Planned** |
 
-> RAG evaluation/observability is tracked explicitly as the additional high-priority Topic 27.
+> RAG evaluation/observability, LangChain and LangGraph are explicit high-priority additions based on interview feedback and the role's AI-agent focus.
+
+## Interview feedback — update to preparation priorities
+
+The interview included deep questions around:
+
+- Pydantic
+- query parameters vs path parameters
+- Python `typing` module
+- decorators
+- dataclasses
+- context managers
+- RAG pipeline
+- RRF
+
+These are now **high-priority revision checkpoints**. Topic 7 has been expanded to explicitly cover decorators, dataclasses and context managers. We will also make API parameter design and the `typing` module part of the FastAPI/Python revision.
+
+## LangChain + LangGraph strategy
+
+We will **learn these frameworks even though they are not yet production technologies in the existing project**. We should not claim hands-on experience we do not have. Instead, prepare to explain the concepts and clearly connect them to our architecture.
+
+Current official positioning: LangChain is a higher-level agent framework with model/tool integrations and prebuilt agent architecture, while LangGraph is a lower-level orchestration runtime for stateful, long-running agent workflows. LangChain agents are built on LangGraph, and LangSmith is used for tracing/evaluation. citeturn104074search1turn104074search0
 
 ## Related coding practice
 
@@ -66,4 +89,4 @@ Hands-on coding exercises are kept separately so this file remains a clean revis
 
 **Next: Topic 7 — Python OOP, Decorators, Generators & Context Managers**
 
-Python topics 1–6 are now recorded as completed. We will continue using the same approach: learn the important interview concepts, connect them to the `ai-platform` codebase where relevant, then do only the coding exercises that add real interview value.
+We will continue using the same approach: learn the important interview concepts, connect them to the `ai-platform` codebase where relevant, then do only the coding exercises that add real interview value.
