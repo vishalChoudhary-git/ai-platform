@@ -8,20 +8,9 @@
 
 Prepare for the Python coding test with a production-oriented focus rather than spending time on large amounts of generic LeetCode practice.
 
-## What we identified from the job posting and preparation screenshots
-
-- Async / await and HTTP clients
-- Pydantic models and validation
-- Repository pattern + ABC
-- Strategy / Plugin pattern
-- Document chunking
-- Reciprocal Rank Fusion (RRF)
-- Python collections, functions, type hints and exceptions
-- Production-quality code, testing and error handling
-
 ## Learning approach
 
-We will start with basic hands-on examples and progressively increase difficulty, but keep the basic-syntax portion short because the interview has many topics to cover.
+Keep basic Python syntax short and connect concepts to the actual `ai-platform` codebase whenever possible.
 
 ```text
 Python basics
@@ -32,7 +21,9 @@ Async / await + HTTPX
     ↓
 Pydantic
     ↓
-Repository + Strategy patterns
+Abstractions + dependency injection
+    ↓
+Strategy / plugin patterns
     ↓
 Chunking + RRF
     ↓
@@ -42,8 +33,6 @@ Production AI coding exercise
 ## Covered so far
 
 ### Python basics
-
-We practiced:
 
 - lists and dictionaries
 - loops and conditions
@@ -55,8 +44,6 @@ We practiced:
 - `enumerate()`
 
 ### Functions + type hints
-
-Example:
 
 ```python
 def get_high_score_documents(
@@ -78,10 +65,10 @@ def get_high_score_documents(
 Important patterns:
 
 ```text
-list[str]                 → list of strings
-tuple[str, float]         → tuple with two typed values
-str | None                → string or None
-def f(x: int) -> bool     → typed parameter and return value
+list[str]         → list of strings
+tuple[str, float] → tuple with two typed values
+str | None        → string or None
+def f(x: int) -> bool → typed parameter and return value
 ```
 
 ### `*args` and `**kwargs`
@@ -94,8 +81,6 @@ def f(x: int) -> bool     → typed parameter and return value
 Know the concept; do not spend excessive preparation time here.
 
 ### Async / await
-
-Basic concurrency pattern:
 
 ```python
 import asyncio
@@ -141,33 +126,175 @@ Production points:
 - connection reuse
 - logging and tracing
 
----
+# Project-connected design patterns
 
-# Pydantic — Theory for Revision
+For interview preparation, we will learn design patterns from the code that already exists in `ai-platform`, rather than relying mainly on toy `ExpenseRepository` examples.
 
-## What is Pydantic?
+## ABC + abstraction: `StorageProvider`
 
-Pydantic is a Python data-validation and data-modeling library built around type annotations. It is especially useful at application boundaries, where raw or untrusted data needs to become a validated Python object.
+Our project defines `StorageProvider` in `app/core/storage/base.py` using `ABC` and `abstractmethod`. The contract exposes async `upload_document`, `download_document`, and `delete_document` operations and keeps storage-specific details out of the abstraction.
 
-Mental model:
+A concrete implementation is `CloudflareR2StorageProvider` in `app/core/storage/cloudflare_r2.py`. It implements the storage contract and contains the R2/S3-specific details.
 
 ```text
-Raw request / JSON
-        ↓
-    Pydantic model
-        ↓
-validated Python data
-        ↓
-business/service logic
+Document/ingestion service
+          ↓
+   StorageProvider        ← abstraction / contract
+          ↓
+CloudflareR2StorageProvider
+          ↓
+      Cloudflare R2
 ```
 
-## Why Pydantic when we already have type hints?
+### Interview framing
 
-Python type hints describe expected types, but they do not by themselves perform runtime validation. Pydantic uses model declarations to parse and validate actual input at runtime.
+> "In my AI platform, I abstracted document storage behind `StorageProvider` so application code depends on a storage capability rather than directly on Cloudflare R2. The concrete provider owns vendor-specific details. This gives us a clean replacement and testing boundary."
 
-Good interview answer:
+This is the kind of answer we should give instead of only explaining what an ABC is.
 
-> Type hints communicate intent and support static analysis, while Pydantic provides runtime parsing and validation. I would use Pydantic at API and service boundaries where input cannot be trusted.
+## Dependency Injection: actual FastAPI wiring
+
+The project demonstrates dependency injection in `app/features/documents/api/dependencies.py`.
+
+`get_document_service()` obtains a `DocumentRepository` and a `StorageProvider` and passes them into `DocumentService`. `get_ingestion_service()` similarly injects its repository, chunk repository and storage dependency.
+
+```text
+FastAPI dependency layer
+        ↓
+DocumentService(repository, storage)
+        ↓
+ repository + StorageProvider
+```
+
+The service therefore does not need to construct `CloudflareR2StorageProvider` itself.
+
+### Why DI matters
+
+- lower coupling
+- easier unit testing
+- replaceable implementations
+- clearer ownership of construction/wiring
+
+## Repository pattern: actual retrieval example
+
+Our `RetrievalService` accepts dependencies through its constructor:
+
+```python
+class RetrievalService:
+    def __init__(
+        self,
+        repository: RetrievalRepository,
+        embedding_provider: EmbeddingProvider,
+        reranker: Reranker | None = None,
+    ):
+        self.repository = repository
+        self.embedding_provider = embedding_provider
+        self.reranker = reranker
+```
+
+The service does not instantiate these infrastructure components itself.
+
+```text
+RetrievalService
+   ├── RetrievalRepository
+   ├── EmbeddingProvider
+   └── Reranker (optional)
+```
+
+### Repository vs Service
+
+**Repository:** data access/persistence concerns.
+
+**Service:** application/business orchestration such as retrieval, filtering, reranking, context construction or invoking another service.
+
+Do not put business decisions into a repository just because they involve data.
+
+## Strategy pattern: actual `Reranker`
+
+Our `app/retrieval/reranking.py` defines `Reranker` as an abstract base class with an async `rerank()` contract.
+
+```python
+class Reranker(ABC):
+    @abstractmethod
+    async def rerank(
+        self,
+        query: str,
+        candidates: list[RetrievedChunk],
+        top_k: int,
+    ) -> list[RetrievedChunk]:
+        ...
+```
+
+A concrete implementation exists in `app/retrieval/openrouter_nemotron_reranker.py`.
+
+```text
+              Reranker
+                 ↓
+        ┌────────┴─────────┐
+        ↓                  ↓
+OpenRouter/Nemotron   future implementation
+```
+
+The retrieval service only needs the `Reranker` contract. This is a real Strategy-style boundary because the reranking behavior/provider can be changed independently of retrieval orchestration.
+
+### Interview framing
+
+> "Our retrieval service depends on the `Reranker` abstraction, not on a specific reranking model. That lets us change the reranking implementation without rewriting the retrieval orchestration."
+
+## One useful distinction
+
+```text
+ABC / interface
+    → defines the contract
+
+Dependency Injection
+    → supplies the implementation
+
+Repository pattern
+    → abstracts persistence/data access
+
+Strategy pattern
+    → abstracts interchangeable behavior/algorithms
+```
+
+These concepts often work together, but they are not interchangeable terms.
+
+## Our retrieval service — several patterns in one place
+
+`app/retrieval/services/retrieval_service.py` is particularly useful for interview preparation because it combines:
+
+- constructor dependency injection
+- type hints
+- async methods
+- `enumerate()` for ranking
+- dictionary-based candidate merging
+- RRF scoring
+- `sorted(..., key=..., reverse=True)`
+- optional strategy via `Reranker | None`
+
+It also demonstrates project-level reasoning: the service can perform retrieval with or without reranking, while the reranker implementation remains replaceable.
+
+# Pydantic — theory for revision
+
+## Mental model
+
+```text
+Raw / untrusted input
+        ↓
+     Pydantic
+        ↓
+Validated Python model
+        ↓
+Service / business logic
+```
+
+## Why Pydantic?
+
+Python type hints describe expected types but do not by themselves enforce runtime validation. Pydantic parses and validates actual input using model declarations.
+
+### Interview answer
+
+> "Type hints communicate intent and support static analysis, while Pydantic provides runtime parsing and validation. I use it at API and service boundaries where input cannot be trusted."
 
 ## Basic model
 
@@ -179,25 +306,7 @@ class SearchRequest(BaseModel):
     top_k: int = 5
 ```
 
-Create a model:
-
-```python
-request = SearchRequest(
-    query="What was the revenue?",
-    top_k=10,
-)
-```
-
-Access fields using normal attributes:
-
-```python
-request.query
-request.top_k
-```
-
 ## Field validation
-
-For business constraints, a field validator can enforce rules:
 
 ```python
 from pydantic import BaseModel, field_validator
@@ -214,18 +323,9 @@ class SearchRequest(BaseModel):
         return value
 ```
 
-Conceptually:
+Use validators for business constraints beyond basic type declarations.
 
-```text
-top_k = 5       → valid
-top_k = 100     → valid
-top_k = 0       → invalid
-top_k = 101     → invalid
-```
-
-## Enum values
-
-Use an Enum when only a controlled set of values is valid.
+## Enum
 
 ```python
 from enum import Enum
@@ -235,16 +335,19 @@ class SearchType(str, Enum):
     HYBRID = "hybrid"
 ```
 
-Then:
+Use an enum when the application supports a controlled set of values.
+
+## Nested models
 
 ```python
-class SearchRequest(BaseModel):
-    query: str
-    search_type: SearchType = SearchType.HYBRID
-    top_k: int = 5
-```
+class UserContext(BaseModel):
+    user_id: str
+    tenant_id: str
 
-This prevents arbitrary search modes from flowing through the application.
+class ChatRequest(BaseModel):
+    query: str
+    context: UserContext
+```
 
 ## Optional values
 
@@ -252,30 +355,7 @@ This prevents arbitrary search modes from flowing through the application.
 document_id: str | None = None
 ```
 
-Means the value can be a string or `None`.
-
-## Nested models
-
-Production APIs often contain nested structures:
-
-```python
-from pydantic import BaseModel
-
-class UserContext(BaseModel):
-    user_id: str
-    tenant_id: str
-
-class ChatRequest(BaseModel):
-    query: str
-    top_k: int = 5
-    context: UserContext
-```
-
-The nested model is validated as well.
-
-## Pydantic in our AI platform
-
-Possible request model:
+## Pydantic in an AI application
 
 ```python
 class ChatRequest(BaseModel):
@@ -285,7 +365,7 @@ class ChatRequest(BaseModel):
     document_ids: list[str] | None = None
 ```
 
-Possible structured application/LLM output:
+We can also use Pydantic models for structured application/LLM outputs:
 
 ```python
 class Answer(BaseModel):
@@ -294,48 +374,25 @@ class Answer(BaseModel):
     confidence: float
 ```
 
-The main benefit is predictable structured data instead of arbitrary dictionaries moving between layers.
+## Interview distinctions
 
-## Pydantic vs dataclass
+**Pydantic vs type hints:** type hints describe intent/static expectations; Pydantic provides runtime parsing/validation.
 
-A dataclass is primarily a convenient Python data container. Pydantic is focused on parsing and validating data, making it especially useful at API and external-data boundaries.
+**Pydantic vs dataclass:** dataclasses are primarily data containers; Pydantic focuses on data parsing and validation.
 
-## Pydantic vs type hints
+**Where to validate:** validate at application boundaries first, then let internal services work with trusted models.
 
-Type hints document expected types and support IDEs/static analysis. Pydantic adds runtime validation and model parsing.
+**What validation does not solve:** authorization, database constraints, security, business authorization rules and downstream failure handling still matter.
 
-## Where should validation happen?
+# Next in Topic 1
 
-Validate at the application boundary first. Internal services should ideally work with trusted, well-defined models rather than repeatedly validating the same raw input.
+- Complete Strategy / Plugin section using the document parser architecture.
+- Cover chunking implementation.
+- Cover RRF implementation.
+- Add testing and mocking.
+- Finish with a production-style Python coding simulation.
 
-## What validation does not solve
-
-Validation does not replace authorization, database constraints, security controls, business rules, or downstream error handling.
-
-## Pydantic revision checklist
-
-- [ ] `BaseModel`
-- [ ] typed fields
-- [ ] default values
-- [ ] `field_validator`
-- [ ] `Enum`
-- [ ] `str | None`
-- [ ] nested models
-- [ ] request/response models
-- [ ] validation at application boundaries
-- [ ] Pydantic vs type hints
-- [ ] Pydantic vs dataclasses
-
-## Next in Topic 1
-
-- Repository pattern + ABC
-- Strategy / Plugin pattern
-- Chunking implementation
-- RRF implementation
-- Testing and mocking
-- Final production-style Python coding simulation
-
-## Revision checklist
+# Revision checklist
 
 - [x] Lists / dictionaries / loops / conditions
 - [x] Filtering and list building
@@ -350,36 +407,12 @@ Validation does not replace authorization, database constraints, security contro
 - [x] `asyncio.gather()`
 - [x] `httpx.AsyncClient`
 - [x] Pydantic theory
+- [x] ABC / abstraction — project example
+- [x] Dependency injection — project example
+- [x] Strategy concept — project example
 - [ ] Pydantic hands-on exercise
-- [ ] Repository / ABC
-- [ ] Strategy / Plugin
+- [ ] Full parser Strategy/Plugin implementation
 - [ ] Chunking
 - [ ] RRF
 - [ ] Testing / mocking
 - [ ] Production coding simulation
-
-## Interview reminders
-
-### Async vs CPU-bound work
-
-Async improves concurrency for I/O-bound operations. It does not automatically make CPU-heavy computation faster.
-
-### `sort()` vs `sorted()`
-
-- `list.sort()` modifies the existing list.
-- `sorted()` returns a new sorted list.
-
-### Why type hints?
-
-They improve readability, IDE support and static analysis. They do not by themselves enforce runtime types.
-
-### Mutable default argument
-
-Avoid:
-
-```python
-def add_document(document, documents=[]):
-    ...
-```
-
-Prefer a `None` default and initialize inside the function.
