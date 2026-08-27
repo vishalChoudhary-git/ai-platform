@@ -2,12 +2,11 @@
 
 **Status:** Complete
 
-## Focus
-Lists, dictionaries, sets, tuples, comprehensions, `enumerate`, `zip`, `sorted`, `max`, `min`, hashing and common complexity trade-offs.
-
 ## Interview feedback — HIGH PRIORITY
 
-**`enumerate()` was explicitly asked in the interview.** Treat it as an interview-revision item, not just a convenience function.
+**`enumerate()` and `lambda` were explicitly asked in the interview.** Treat both as interview-revision items, not just convenience syntax.
+
+### `enumerate()`
 
 ```python
 for rank, document in enumerate(results, start=1):
@@ -16,17 +15,55 @@ for rank, document in enumerate(results, start=1):
 
 Use `enumerate()` when you need both the item and its index/rank without manually maintaining a counter.
 
-### Likely interview question
-
-**What is `enumerate()` and why would you use it?**
+**Likely interview question — What is `enumerate()` and why would you use it?**
 
 > `enumerate()` lets me iterate over a collection while getting both the current index and the value. It makes ranking/indexing logic cleaner than maintaining a separate counter.
 
-### Project connection
+**Project connection:** In retrieval code, `enumerate()` is useful when assigning ranks to vector or keyword results before calculating RRF scores.
 
-In retrieval code, `enumerate()` is useful when assigning ranks to vector or keyword results before calculating RRF scores.
+### `lambda`
+
+**`lambda`:** The keyword that tells Python you are creating an anonymous function.
+
+**`arguments`:** The inputs passed into the function (can be none, one, or many, separated by commas).
+
+**`expression`:** A single piece of code that gets evaluated and automatically returned. You do not write the `return` keyword.
+
+General form:
+
+```python
+lambda arguments: expression
+```
+
+Example:
+
+```python
+square = lambda x: x * x
+```
+
+This is similar in behavior to:
+
+```python
+def square(x):
+    return x * x
+```
+
+A common production use is as a small callback, especially for sorting:
+
+```python
+sorted_documents = sorted(
+    documents,
+    key=lambda doc: doc["score"],
+    reverse=True,
+)
+```
+
+**Likely interview question — What is a lambda function and where would you use it?**
+
+> A lambda is a small anonymous function containing a single expression. I mainly use it for short callbacks or transformations, such as the `key` function passed to `sorted()`. For larger or reusable logic, I prefer a normal named function because it is clearer and easier to test.
 
 ## Completed
+
 - lists, dictionaries, sets and tuples
 - loops and conditions
 - filtering and aggregation
@@ -34,6 +71,7 @@ In retrieval code, `enumerate()` is useful when assigning ranks to vector or key
 - list comprehensions
 - dictionary access and `dict.get()`
 - `enumerate()` for ranking/indexing
+- `lambda` functions
 - `sorted()` vs `.sort()`
 - `key=lambda`
 - `max(..., key=...)`
@@ -149,6 +187,7 @@ Use the data structure that matches the operation you need rather than choosing 
 - [x] list comprehension
 - [x] `dict.get()`
 - [x] `enumerate()` **(HIGH PRIORITY — explicitly asked in interview)**
+- [x] `lambda` **(HIGH PRIORITY — explicitly asked in interview)**
 - [x] `sorted()`
 - [x] `.sort()`
 - [x] `key=lambda`
