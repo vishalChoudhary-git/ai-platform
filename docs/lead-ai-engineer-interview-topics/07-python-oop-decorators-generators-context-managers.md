@@ -2,17 +2,13 @@
 
 **Status:** Complete
 
-## Focus
-Classes, inheritance vs composition, `@property`, decorators, dataclasses, generators/`yield`, context managers, `with`, and clean object-oriented design.
+## Interview feedback — HIGH PRIORITY
 
-## New interview feedback
 The interviewer explicitly asked deep questions around:
 
 - decorators
 - dataclasses
 - context managers
-
-These are high-priority revision areas.
 
 ## 1. Classes and objects
 
@@ -28,46 +24,20 @@ class Document:
         return f"{self.document_id}: {self.name}"
 ```
 
-### `self`
-
 `self` refers to the current object/instance.
 
 ## 2. Inheritance vs composition
 
-### Inheritance
+**Inheritance:** use when there is a genuine substitutable relationship and common abstraction/contract.
 
-Use inheritance when there is a genuine substitutable relationship and a common abstraction/contract.
+**Composition:** use when one object owns/uses another and behavior should vary independently.
 
-```python
-class BaseParser:
-    def parse(self):
-        ...
-
-class PdfParser(BaseParser):
-    def parse(self):
-        ...
+```text
+Inheritance → IS-A
+Composition → HAS-A
 ```
 
-### Composition
-
-Use composition when one object owns/uses another object and behavior needs to vary independently.
-
-```python
-class DocumentParser:
-    def __init__(self, parser):
-        self.parser = parser
-
-    def parse(self, source):
-        return self.parser.parse(source)
-```
-
-### Project connection
-
-The `ai-document-intelligence` `DocumentParser` holds a `BaseParser` implementation and delegates parsing to it. This is a concrete example of composition around interchangeable strategies.
-
-### Interview answer
-
-> "I generally prefer composition when behavior needs to vary independently, and inheritance when there is a genuine substitutable abstraction or contract."
+Project connection: `ai-document-intelligence` uses `DocumentParser` with a selected `BaseParser` implementation and delegates parsing, which is composition around interchangeable strategies.
 
 ## 3. `@property`
 
@@ -83,7 +53,7 @@ class Document:
         return self.pages > 100
 ```
 
-## 4. Decorators — high priority
+## 4. Decorators — HIGH PRIORITY
 
 ### Definition to remember
 
@@ -115,26 +85,26 @@ def hello():
     ...
 ```
 
-is equivalent in concept to:
+is conceptually equivalent to:
 
 ```python
 hello = decorator(hello)
 ```
 
+### Anatomy of the definition
+
+- **`decorator`**: the function that receives another function.
+- **`func`**: the original function passed into the decorator.
+- **`wrapper`**: the new function returned by the decorator.
+- **return `wrapper`**: calling the decorated function now executes the wrapper.
+
 ### Why decorators?
 
-They are useful for cross-cutting concerns such as:
+Useful for cross-cutting concerns such as logging, timing, authorization, caching, retries and instrumentation.
 
-- logging
-- timing
-- authorization
-- caching
-- retries
-- instrumentation
+### `*args` and `**kwargs`
 
-### `*args` and `**kwargs` in decorators
-
-A reusable decorator usually accepts arbitrary arguments:
+A reusable decorator often accepts arbitrary arguments:
 
 ```python
 from functools import wraps
@@ -146,27 +116,20 @@ def log_call(func):
         result = func(*args, **kwargs)
         print("Finished")
         return result
-
     return wrapper
 ```
 
-### Why `functools.wraps`?
+### `functools.wraps`
 
-It preserves metadata such as the wrapped function's name and docstring.
+Preserves metadata such as the wrapped function's name and docstring.
 
-### Project/framework connection
+### Framework connection
 
-```text
-Decorator
-   ↓
-FastAPI @app.get / @app.post
-```
-
-FastAPI route decorators register endpoint functions with the framework. This is a useful real-world example to mention in an interview.
+FastAPI uses decorators such as `@app.get()` and `@app.post()` for route registration.
 
 ## 5. Dataclasses
 
-`@dataclass` is useful for lightweight typed data containers.
+`@dataclass` is useful for lightweight typed data containers. Python generates common methods such as `__init__` and representation/equality behavior.
 
 ```python
 from dataclasses import dataclass
@@ -177,22 +140,11 @@ class Document:
     text: str
 ```
 
-Python generates common methods such as `__init__` and a useful representation/equality behavior.
-
-### When to use a dataclass
-
-Use it when the primary need is a lightweight Python data object and full runtime parsing/validation is not required.
-
 ### Dataclass vs Pydantic
 
 ```text
-dataclass
-    ↓
-primarily a Python data container
-
-Pydantic
-    ↓
-runtime parsing + validation
+dataclass → lightweight Python data container
+Pydantic  → parsing + runtime validation
 ```
 
 ### Mutable defaults
@@ -215,35 +167,25 @@ class Document:
     tags: list[str] = field(default_factory=list)
 ```
 
-### `frozen=True`
+`frozen=True` can be used when an immutable-style value object is desired.
 
-```python
-@dataclass(frozen=True)
-class DocumentId:
-    value: str
-```
+## 6. Context managers — HIGH PRIORITY
 
-Useful when the object should be immutable after construction.
-
-## 6. Context managers — high priority
-
-A context manager manages setup and cleanup around a block of code.
-
-Common syntax:
+A context manager manages setup and cleanup around a block.
 
 ```python
 with resource:
     do_work()
 ```
 
-and asynchronously:
+Async:
 
 ```python
 async with resource:
     await do_work()
 ```
 
-### Mental model
+Mental model:
 
 ```text
 enter
@@ -253,60 +195,18 @@ do work
 exit / cleanup
 ```
 
-### What happens behind `with`?
+Synchronous context managers implement `__enter__` / `__exit__`. Async context managers implement `__aenter__` / `__aexit__`.
 
-Class-based context managers implement:
+Cleanup still happens when an exception occurs inside the managed block.
 
-```python
-__enter__()
-__exit__()
-```
-
-For async context managers the equivalents are:
-
-```python
-__aenter__()
-__aexit__()
-```
-
-### Why use context managers?
-
-They make resource lifecycle explicit and help guarantee cleanup even when an exception occurs.
-
-Examples:
-
-- files
-- locks
-- database transactions
-- HTTP clients
-- temporary resources
-
-### Project connection
-
-We already used:
+Example from our preparation:
 
 ```python
 async with httpx.AsyncClient(timeout=10.0) as client:
     response = await client.get(url)
 ```
 
-This is a real context-manager pattern from our async HTTP work.
-
-### `contextlib.contextmanager`
-
-```python
-from contextlib import contextmanager
-
-@contextmanager
-def managed_resource():
-    print("Acquire")
-    try:
-        yield
-    finally:
-        print("Release")
-```
-
-The `finally` block ensures cleanup.
+`contextlib.contextmanager` and `contextlib.asynccontextmanager` are also worth recognizing.
 
 ## 7. Generators
 
@@ -319,28 +219,9 @@ def get_numbers():
     yield 3
 ```
 
-Instead of creating all values immediately, they produce values as they are consumed.
+Use cases include large datasets, incremental processing, streaming and memory efficiency.
 
-### Why generators?
-
-Useful for:
-
-- large datasets
-- incremental processing
-- streaming
-- memory efficiency
-
-### List vs generator
-
-```text
-list
-→ all values are materialized now
-
-generator
-→ values are produced on demand
-```
-
-### Async generators
+Async generators:
 
 ```python
 async def stream_tokens():
@@ -351,9 +232,9 @@ async for token in stream_tokens():
     print(token)
 ```
 
-This maps naturally to LLM token streaming and other asynchronous streams.
+This maps naturally to LLM token streams/SSE-style flows.
 
-## 8. High-value interview questions
+## High-value interview questions
 
 ### What is a decorator?
 
@@ -391,7 +272,7 @@ This maps naturally to LLM token streaming and other asynchronous streams.
 
 > Prefer composition when behavior varies independently; use inheritance when there is a real substitutable relationship and shared contract.
 
-## 9. The project/framework mental model
+## Project/framework mental model
 
 ```text
 Decorator
@@ -425,7 +306,7 @@ streaming / large-data processing / LLM token streams
 
 ## Checklist
 
-- [x] Classes / objects
+- [x] classes / objects
 - [x] `self`
 - [x] inheritance vs composition
 - [x] `@property`
