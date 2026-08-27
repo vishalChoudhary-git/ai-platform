@@ -333,6 +333,84 @@ Key points to revise:
 - runtime validation vs type hints
 - Pydantic vs dataclasses
 
+### Project-based design-pattern questions
+
+These are not separate syntax drills. They are interview questions we should be able to answer using our real `ai-platform` and `ai-document-intelligence` implementations.
+
+#### Question 1 — Tell me about chunking in your AI system.
+
+Expected answer structure:
+
+> "Our document-intelligence pipeline separates parsing from chunking. The parser produces a normalized `ParsedDocument`, and the chunker converts that into `DocumentChunk` objects suitable for retrieval. We preserve useful provenance such as document/page context. Chunk size and overlap are treated as tunable retrieval parameters, and I would validate those choices using retrieval and end-to-end evaluation rather than assuming one universal size."
+
+#### Question 2 — Why did you separate parsing and chunking?
+
+Expected answer structure:
+
+> "They have different responsibilities. Parsing extracts and normalizes document structure, while chunking decides how that structured content should be divided into retrieval units. Keeping them separate lets us change the chunking strategy without changing the parser and lets the chunker operate on a standardized document representation."
+
+#### Question 3 — Why use a `BaseChunker` abstraction?
+
+Expected answer structure:
+
+> "It gives us a stable chunking contract and allows different chunking strategies to be introduced independently of the rest of the pipeline. It also gives us a clean testing seam."
+
+#### Question 4 — Why not use a fixed chunk size everywhere?
+
+Expected answer structure:
+
+> "Document structure and query behavior vary. I treat chunk size and overlap as tunable parameters and evaluate them against representative retrieval data, balancing retrieval quality, context size, latency and cost."
+
+#### Question 5 — What happens if chunks are too small?
+
+Possible points:
+
+- insufficient context
+- more fragments
+- more retrieval candidates
+- more metadata/embedding overhead
+- related statements may be separated
+
+#### Question 6 — What happens if chunks are too large?
+
+Possible points:
+
+- irrelevant content enters the retrieved context
+- larger prompts
+- higher token cost
+- higher latency
+- potentially weaker signal-to-noise ratio
+
+#### Question 7 — Why preserve metadata with a chunk?
+
+Expected points:
+
+- citations and provenance
+- page/document identification
+- metadata/permission filtering
+- debugging retrieval
+- downstream ranking and auditing
+
+#### Question 8 — Why is chunking evaluated through retrieval instead of only looking at chunks?
+
+Expected answer structure:
+
+> "The purpose of chunking is to support retrieval and answer generation. A chunk can look reasonable to a developer but still perform poorly for actual queries. Therefore I would evaluate chunking using retrieval metrics and downstream answer quality, while also considering latency and cost."
+
+### Project-based abstraction questions
+
+#### Question 9 — Why did you introduce `StorageProvider`?
+
+> "The application depends on a storage capability rather than directly on Cloudflare R2. `StorageProvider` defines the contract while `CloudflareR2StorageProvider` contains vendor-specific details. This gives us a replacement and testing boundary."
+
+#### Question 10 — Where is dependency injection in your project?
+
+> "Our FastAPI dependency layer constructs the repository and storage dependencies and passes them into services. The services therefore don't need to create their infrastructure dependencies themselves."
+
+#### Question 11 — Why is `Reranker` an abstraction?
+
+> "The retrieval service should not be coupled to a specific reranking model/provider. By depending on the `Reranker` contract, we can change the reranking implementation independently of retrieval orchestration."
+
 ## Progress
 
 - [x] Lists, dictionaries, loops, conditions, sorting
@@ -345,10 +423,12 @@ Key points to revise:
 - [x] `asyncio.gather()`
 - [x] HTTPX async request basics
 - [x] Pydantic theory
+- [x] ABC / abstraction — project example
+- [x] Dependency injection — project example
+- [x] Strategy concept — project example
+- [x] Chunking theory + project-based interview questions
 - [ ] Pydantic hands-on exercise
-- [ ] Repository / ABC
-- [ ] Strategy / Plugin pattern
-- [ ] Chunking
+- [ ] Full parser Strategy/Plugin implementation
 - [ ] RRF
 - [ ] Testing / mocking
 - [ ] Production coding simulation
