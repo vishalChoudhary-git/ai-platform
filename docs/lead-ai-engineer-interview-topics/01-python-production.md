@@ -5,6 +5,7 @@
 **In progress**
 
 ## Goal
+
 Prepare for the Python coding test with a production-oriented focus rather than spending time on large amounts of generic LeetCode practice.
 
 ## What we identified from the job posting and preparation screenshots
@@ -20,16 +21,16 @@ Prepare for the Python coding test with a production-oriented focus rather than 
 
 ## Learning approach
 
-We will start with basic hands-on examples and progressively increase difficulty:
+We will start with basic hands-on examples and progressively increase difficulty, but keep the basic-syntax portion short because the interview has many topics to cover.
 
 ```text
 Python basics
     ↓
 Functions + type hints
     ↓
-Pydantic
+Async / await + HTTPX
     ↓
-Async / await
+Pydantic
     ↓
 Repository + Strategy patterns
     ↓
@@ -140,9 +141,193 @@ Production points:
 - connection reuse
 - logging and tracing
 
+---
+
+# Pydantic — Theory for Revision
+
+## What is Pydantic?
+
+Pydantic is a Python data-validation and data-modeling library built around type annotations. It is especially useful at application boundaries, where raw or untrusted data needs to become a validated Python object.
+
+Mental model:
+
+```text
+Raw request / JSON
+        ↓
+    Pydantic model
+        ↓
+validated Python data
+        ↓
+business/service logic
+```
+
+## Why Pydantic when we already have type hints?
+
+Python type hints describe expected types, but they do not by themselves perform runtime validation. Pydantic uses model declarations to parse and validate actual input at runtime.
+
+Good interview answer:
+
+> Type hints communicate intent and support static analysis, while Pydantic provides runtime parsing and validation. I would use Pydantic at API and service boundaries where input cannot be trusted.
+
+## Basic model
+
+```python
+from pydantic import BaseModel
+
+class SearchRequest(BaseModel):
+    query: str
+    top_k: int = 5
+```
+
+Create a model:
+
+```python
+request = SearchRequest(
+    query="What was the revenue?",
+    top_k=10,
+)
+```
+
+Access fields using normal attributes:
+
+```python
+request.query
+request.top_k
+```
+
+## Field validation
+
+For business constraints, a field validator can enforce rules:
+
+```python
+from pydantic import BaseModel, field_validator
+
+class SearchRequest(BaseModel):
+    query: str
+    top_k: int = 5
+
+    @field_validator("top_k")
+    @classmethod
+    def validate_top_k(cls, value: int) -> int:
+        if value <= 0 or value > 100:
+            raise ValueError("top_k must be between 1 and 100")
+        return value
+```
+
+Conceptually:
+
+```text
+top_k = 5       → valid
+top_k = 100     → valid
+top_k = 0       → invalid
+top_k = 101     → invalid
+```
+
+## Enum values
+
+Use an Enum when only a controlled set of values is valid.
+
+```python
+from enum import Enum
+
+class SearchType(str, Enum):
+    VECTOR = "vector"
+    HYBRID = "hybrid"
+```
+
+Then:
+
+```python
+class SearchRequest(BaseModel):
+    query: str
+    search_type: SearchType = SearchType.HYBRID
+    top_k: int = 5
+```
+
+This prevents arbitrary search modes from flowing through the application.
+
+## Optional values
+
+```python
+document_id: str | None = None
+```
+
+Means the value can be a string or `None`.
+
+## Nested models
+
+Production APIs often contain nested structures:
+
+```python
+from pydantic import BaseModel
+
+class UserContext(BaseModel):
+    user_id: str
+    tenant_id: str
+
+class ChatRequest(BaseModel):
+    query: str
+    top_k: int = 5
+    context: UserContext
+```
+
+The nested model is validated as well.
+
+## Pydantic in our AI platform
+
+Possible request model:
+
+```python
+class ChatRequest(BaseModel):
+    query: str
+    top_k: int = 5
+    search_type: SearchType = SearchType.HYBRID
+    document_ids: list[str] | None = None
+```
+
+Possible structured application/LLM output:
+
+```python
+class Answer(BaseModel):
+    answer: str
+    citations: list[str]
+    confidence: float
+```
+
+The main benefit is predictable structured data instead of arbitrary dictionaries moving between layers.
+
+## Pydantic vs dataclass
+
+A dataclass is primarily a convenient Python data container. Pydantic is focused on parsing and validating data, making it especially useful at API and external-data boundaries.
+
+## Pydantic vs type hints
+
+Type hints document expected types and support IDEs/static analysis. Pydantic adds runtime validation and model parsing.
+
+## Where should validation happen?
+
+Validate at the application boundary first. Internal services should ideally work with trusted, well-defined models rather than repeatedly validating the same raw input.
+
+## What validation does not solve
+
+Validation does not replace authorization, database constraints, security controls, business rules, or downstream error handling.
+
+## Pydantic revision checklist
+
+- [ ] `BaseModel`
+- [ ] typed fields
+- [ ] default values
+- [ ] `field_validator`
+- [ ] `Enum`
+- [ ] `str | None`
+- [ ] nested models
+- [ ] request/response models
+- [ ] validation at application boundaries
+- [ ] Pydantic vs type hints
+- [ ] Pydantic vs dataclasses
+
 ## Next in Topic 1
 
-- Pydantic models and validators
 - Repository pattern + ABC
 - Strategy / Plugin pattern
 - Chunking implementation
@@ -164,7 +349,8 @@ Production points:
 - [x] `async def` / `await`
 - [x] `asyncio.gather()`
 - [x] `httpx.AsyncClient`
-- [ ] Pydantic
+- [x] Pydantic theory
+- [ ] Pydantic hands-on exercise
 - [ ] Repository / ABC
 - [ ] Strategy / Plugin
 - [ ] Chunking
