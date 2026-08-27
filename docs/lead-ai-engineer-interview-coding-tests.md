@@ -2,7 +2,7 @@
 
 This file contains the hands-on coding exercises, solutions, mistakes, and revision notes from our interview preparation.
 
-> **Rule:** We practice from basic Python to production AI code. We keep the exercises here, while topic theory lives in the dedicated topic files under `docs/lead-ai-engineer-interview-topics/`.
+> **Rule:** We practice from basic Python to production AI code. Exercises live here; topic theory lives in the dedicated topic files under `docs/lead-ai-engineer-interview-topics/`.
 
 ## Topic 1 — Python Coding Test
 
@@ -113,7 +113,7 @@ print(f"{page_list}")
 
 - **Task 1:** Needs a filter. The original code printed every document instead of only PDFs.
 - **Task 2:** Needs the same PDF filter before appending the ID.
-- **Task 3:** Correct. Sorting descending and taking `[0]` finds the highest-page document.
+- **Task 3:** Correct approach. Sorting descending and taking `[0]` finds the highest-page document.
 - **Task 4:** Correct.
 - **Task 5:** Correct.
 
@@ -192,26 +192,14 @@ def get_high_score_documents(
 
 ### Review
 
-**Correct.** This demonstrates:
+**Correct.** This demonstrates function definition, parameters, default arguments, type hints, `list[dict]`, return type `list[str]`, filtering, `.append()` and `return`.
 
-- function definition
-- parameters
-- default arguments
-- type hints
-- `list[dict]`
-- return type `list[str]`
-- filtering
-- `.append()`
-- `return`
-
-Additional validation we discussed:
+Additional validation:
 
 ```python
 if threshold < 0 or threshold > 1:
     raise ValueError("threshold must be between 0 and 1")
 ```
-
-Important interview point: Python type hints are annotations; they do not by themselves enforce runtime types. Runtime validation will be covered with Pydantic.
 
 ---
 
@@ -251,19 +239,9 @@ asyncio.run(main())
 
 ### Review
 
-**Correct.** The important pattern is:
+**Correct.** `asyncio.gather()` allows independent async operations to run concurrently. Three simulated two-second waits take roughly two seconds rather than six seconds.
 
-```python
-await asyncio.gather(
-    task_a(),
-    task_b(),
-    task_c(),
-)
-```
-
-Because the operations are waiting on asynchronous I/O, they can run concurrently. Three simulated two-second waits take roughly two seconds rather than six seconds.
-
-A scalable variant keeps the results as a list:
+A list-oriented variant is easier to scale:
 
 ```python
 results = await asyncio.gather(
@@ -273,13 +251,7 @@ results = await asyncio.gather(
 )
 ```
 
-We also discussed:
-
-```python
-await asyncio.gather(..., return_exceptions=True)
-```
-
-for cases where partial success should be collected rather than immediately propagating an exception.
+We also discussed `return_exceptions=True` when partial success should be collected rather than immediately propagating an exception.
 
 ---
 
@@ -311,7 +283,7 @@ async def fetch_user(user_id: str) -> dict:
 
 ### Review
 
-The structure was correct. Two small fixes:
+The structure was correct. Two small corrections:
 
 1. Use an f-string so `user_id` is interpolated.
 2. Use the requested 10-second timeout.
@@ -343,51 +315,28 @@ Production concepts connected to this exercise:
 
 ---
 
-## Quick Revision Notes
+## Theory-first topics covered without a coding exercise yet
 
-### Python function signature
+### Pydantic
 
-```python
-def name(arg: type, optional: type = default) -> return_type:
-    ...
-```
+Theory is maintained in `docs/lead-ai-engineer-interview-topics/01-python-production.md`. We will not spend a separate exercise on every Pydantic feature. We will do one focused hands-on model later if needed.
 
-### Useful type-hint patterns
+Key points to revise:
 
-```python
-str
-int
-float
-bool
-list[str]
-dict[str, float]
-tuple[str, float]
-str | None
-```
-
-### Async patterns
-
-```python
-async def function():
-    result = await operation()
-```
-
-```python
-results = await asyncio.gather(
-    operation_a(),
-    operation_b(),
-)
-```
-
-```python
-async with httpx.AsyncClient(timeout=10.0) as client:
-    response = await client.get(url)
-```
+- `BaseModel`
+- typed fields and defaults
+- `field_validator`
+- `Enum`
+- `str | None`
+- nested models
+- request/response models
+- runtime validation vs type hints
+- Pydantic vs dataclasses
 
 ## Progress
 
 - [x] Lists, dictionaries, loops, conditions, sorting
-- [x] Basic filtering and list building
+- [x] Filtering and list building
 - [x] `sorted()` and `max()` patterns
 - [x] Functions
 - [x] Type hints
@@ -395,10 +344,19 @@ async with httpx.AsyncClient(timeout=10.0) as client:
 - [x] Async / await basics
 - [x] `asyncio.gather()`
 - [x] HTTPX async request basics
-- [ ] Pydantic
-- [ ] Repository pattern
+- [x] Pydantic theory
+- [ ] Pydantic hands-on exercise
+- [ ] Repository / ABC
 - [ ] Strategy / Plugin pattern
 - [ ] Chunking
 - [ ] RRF
 - [ ] Testing / mocking
 - [ ] Production coding simulation
+
+## Mistakes to revisit
+
+1. Use `f"...{variable}..."` when a variable must be interpolated into a URL/string.
+2. Distinguish printing values from actually creating a list.
+3. `list.sort()` mutates the original list; `sorted()` returns a new list.
+4. Use `enumerate(..., start=1)` for human-readable ranking.
+5. Async primarily helps I/O-bound concurrency; it does not automatically speed up CPU-bound work.
