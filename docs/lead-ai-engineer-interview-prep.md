@@ -50,11 +50,11 @@ Learn → Basic example → Medium example → AI/RAG example
 | 22 | [AI Observability, Monitoring, Logging & Tracing](lead-ai-engineer-interview-topics/23-ai-observability-monitoring-logging-tracing.md) | Planned |
 | 23 | [Docker, Kubernetes & Cloud Deployment](lead-ai-engineer-interview-topics/24-docker-kubernetes-cloud-deployment.md) | Planned |
 | 24 | [AWS for AI Engineering](lead-ai-engineer-interview-topics/25-aws-for-ai-engineering.md) | Planned |
-| 25 | [Security, Multi-Tenancy & Lead/Manager Engineering](lead-ai-engineer-interview-topics/26-security-multi-tenancy-lead-manager.md) | Planned |
-| 26 | **Lead/Manager Round — Leadership, Ownership & Behavioral Engineering** | **Planned** |
+| 25 | [Security & Multi-Tenancy](lead-ai-engineer-interview-topics/26-security-multi-tenancy-lead-manager.md) | Planned |
+| 26 | [Lead/Manager Round — Leadership, Ownership & Behavioral Engineering](lead-ai-engineer-interview-topics/26-lead-manager-round.md) | Planned |
 | 27 | **[RAG Evaluation & Observability — Ragas + LangSmith](lead-ai-engineer-interview-topics/27-rag-evaluation-observability-ragas-langsmith.md)** | **Added / Planned** |
 
-> The original preparation roadmap has been kept as the core set, and RAG evaluation/observability is tracked explicitly as the additional high-priority Topic 27.
+> RAG evaluation/observability is tracked explicitly as the additional high-priority Topic 27.
 
 ## Related coding practice
 
@@ -66,7 +66,7 @@ Hands-on coding exercises are kept separately so this file remains a clean revis
 
 **Topic 1 — Python Coding Test: Production Python**
 
-We are learning Python from a practical starting point and moving toward the exact patterns highlighted in the interview-preparation screenshots:
+We are learning Python from a practical starting point and moving toward the patterns highlighted in the interview-preparation screenshots:
 
 - Functions + type hints
 - Async / await + `asyncio.gather()`
