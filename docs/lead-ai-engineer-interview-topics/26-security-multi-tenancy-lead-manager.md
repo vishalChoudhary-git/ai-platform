@@ -1,12 +1,12 @@
-# Topic 26 — Security, Multi-Tenancy & Lead/Manager Engineering
+# Topic 25 — Security & Multi-Tenancy
 
 **Status:** Planned
 
 ## Focus
-Authentication vs authorization, tenant isolation, document permissions, secrets, prompt/data security, auditability, secure APIs, architecture ownership, code/design reviews, mentoring, conflict resolution and technical leadership.
+Authentication vs authorization, tenant isolation, document permissions, secrets management, prompt/data security, auditability, secure APIs and access-control enforcement in AI/RAG systems.
 
 ## Interview outcomes
-Connect secure AI-platform design with lead-level ownership and manager-round communication.
+Design secure multi-tenant AI services where users can only retrieve and act on data they are authorized to access.
 
 ## Notes
 Content will be added as we complete this topic.
