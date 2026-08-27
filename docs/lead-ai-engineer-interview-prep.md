@@ -26,12 +26,12 @@ Learn → Basic example → Medium example → AI/RAG example
 
 | # | Topic | Status |
 |---|---|---|
-| 1 | [Python Coding Test — Production Python](lead-ai-engineer-interview-topics/01-python-production.md) | **In progress** |
-| 2 | [Async / Await, asyncio & HTTP Clients](lead-ai-engineer-interview-topics/02-async-await-http-clients.md) | Planned |
-| 3 | [Pydantic Models, Validation & Type Safety](lead-ai-engineer-interview-topics/03-pydantic-validation-type-safety.md) | Planned |
-| 4 | [Repository Pattern, ABC & Dependency Injection](lead-ai-engineer-interview-topics/04-repository-abc-dependency-injection.md) | Planned |
-| 5 | [Strategy / Plugin Pattern & Extensible Architecture](lead-ai-engineer-interview-topics/05-strategy-plugin-extensible-architecture.md) | Planned |
-| 6 | [Python Data Structures, Comprehensions & Sorting](lead-ai-engineer-interview-topics/06-python-data-structures-comprehensions-sorting.md) | Planned |
+| 1 | [Python Coding Test — Production Python](lead-ai-engineer-interview-topics/01-python-production.md) | **Complete** |
+| 2 | [Async / Await, asyncio & HTTP Clients](lead-ai-engineer-interview-topics/02-async-await-http-clients.md) | **Complete** |
+| 3 | [Pydantic Models, Validation & Type Safety](lead-ai-engineer-interview-topics/03-pydantic-validation-type-safety.md) | **Complete** |
+| 4 | [Repository Pattern, ABC & Dependency Injection](lead-ai-engineer-interview-topics/04-repository-abc-dependency-injection.md) | **Complete** |
+| 5 | [Strategy / Plugin Pattern & Extensible Architecture](lead-ai-engineer-interview-topics/05-strategy-plugin-extensible-architecture.md) | **Complete** |
+| 6 | [Python Data Structures, Comprehensions & Sorting](lead-ai-engineer-interview-topics/06-python-data-structures-comprehensions-sorting.md) | **Complete** |
 | 7 | [Python OOP, Decorators, Generators & Context Managers](lead-ai-engineer-interview-topics/07-python-oop-decorators-generators-context-managers.md) | Planned |
 | 8 | [FastAPI — APIs, Validation, Middleware & Error Handling](lead-ai-engineer-interview-topics/08-fastapi-apis-validation-middleware-errors.md) | Planned |
 | 9 | [LLM Fundamentals — Tokens, Context, Temperature & Inference](lead-ai-engineer-interview-topics/09-llm-fundamentals.md) | Planned |
@@ -64,16 +64,6 @@ Hands-on coding exercises are kept separately so this file remains a clean revis
 
 ## Current focus
 
-**Topic 1 — Python Coding Test: Production Python**
+**Next: Topic 7 — Python OOP, Decorators, Generators & Context Managers**
 
-We are learning Python from a practical starting point and moving toward the patterns highlighted in the interview-preparation screenshots:
-
-- Functions + type hints
-- Async / await + `asyncio.gather()`
-- Async HTTP with `httpx`
-- Pydantic
-- Repository + ABC
-- Strategy / Plugin
-- Chunking
-- RRF
-- Testing and production-quality Python
+Python topics 1–6 are now recorded as completed. We will continue using the same approach: learn the important interview concepts, connect them to the `ai-platform` codebase where relevant, then do only the coding exercises that add real interview value.
