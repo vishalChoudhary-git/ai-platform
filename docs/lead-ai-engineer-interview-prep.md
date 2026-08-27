@@ -8,7 +8,7 @@ Each topic has its own Markdown file under:
 
 `docs/lead-ai-engineer-interview-topics/`
 
-We will expand the individual topic file as we complete it. This master file should stay easy to scan and should contain the roadmap, links, status and a small amount of guidance rather than all the detailed theory.
+We will expand the individual topic file as we complete it. This master file should stay easy to scan and contain the roadmap, links, status and high-level guidance rather than all the detailed theory.
 
 ### Preparation approach
 
@@ -51,15 +51,10 @@ Learn → Basic example → Medium example → AI/RAG example
 | 23 | [Docker, Kubernetes & Cloud Deployment](lead-ai-engineer-interview-topics/24-docker-kubernetes-cloud-deployment.md) | Planned |
 | 24 | [AWS for AI Engineering](lead-ai-engineer-interview-topics/25-aws-for-ai-engineering.md) | Planned |
 | 25 | [Security, Multi-Tenancy & Lead/Manager Engineering](lead-ai-engineer-interview-topics/26-security-multi-tenancy-lead-manager.md) | Planned |
-| 26 | **RAG Evaluation & Observability — Ragas + LangSmith** | **Added / Planned** |
-
-### Additional Topic
-
-| # | Topic | Status |
-|---|---|---|
+| 26 | **Lead/Manager Round — Leadership, Ownership & Behavioral Engineering** | **Planned** |
 | 27 | **[RAG Evaluation & Observability — Ragas + LangSmith](lead-ai-engineer-interview-topics/27-rag-evaluation-observability-ragas-langsmith.md)** | **Added / Planned** |
 
-> **Clarification:** The original preparation list had 26 core topics. RAG evaluation was identified as an especially important additional topic, so we are keeping it explicitly as **Topic 27**. The duplicate entry above at #26 will be removed in the next cleanup commit if needed.
+> The original preparation roadmap has been kept as the core set, and RAG evaluation/observability is tracked explicitly as the additional high-priority Topic 27.
 
 ## Related coding practice
 
