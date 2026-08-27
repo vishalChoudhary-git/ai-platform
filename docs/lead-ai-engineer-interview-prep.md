@@ -51,9 +51,15 @@ Learn → Basic example → Medium example → AI/RAG example
 | 23 | [Docker, Kubernetes & Cloud Deployment](lead-ai-engineer-interview-topics/24-docker-kubernetes-cloud-deployment.md) | Planned |
 | 24 | [AWS for AI Engineering](lead-ai-engineer-interview-topics/25-aws-for-ai-engineering.md) | Planned |
 | 25 | [Security, Multi-Tenancy & Lead/Manager Engineering](lead-ai-engineer-interview-topics/26-security-multi-tenancy-lead-manager.md) | Planned |
-| 26 | **[RAG Evaluation & Observability — Ragas + LangSmith](lead-ai-engineer-interview-topics/27-rag-evaluation-observability-ragas-langsmith.md)** | **Added / Planned** |
+| 26 | **RAG Evaluation & Observability — Ragas + LangSmith** | **Added / Planned** |
 
-> **Note:** The RAG evaluation topic is an additional high-priority topic beyond the original 25-topic core map. It was added because evaluation, observability and production quality are especially important for this role.
+### Additional Topic
+
+| # | Topic | Status |
+|---|---|---|
+| 27 | **[RAG Evaluation & Observability — Ragas + LangSmith](lead-ai-engineer-interview-topics/27-rag-evaluation-observability-ragas-langsmith.md)** | **Added / Planned** |
+
+> **Clarification:** The original preparation list had 26 core topics. RAG evaluation was identified as an especially important additional topic, so we are keeping it explicitly as **Topic 27**. The duplicate entry above at #26 will be removed in the next cleanup commit if needed.
 
 ## Related coding practice
 
