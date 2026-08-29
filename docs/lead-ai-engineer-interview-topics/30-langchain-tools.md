@@ -67,7 +67,77 @@ This gives the system a controlled boundary between model reasoning and real-wor
 
 ---
 
-# 3. Tool vs Function
+# 3. Where does a Tool method such as `get_expense()` live?
+
+A Tool should generally **not be confused with a Controller**. The Tool is the model-facing interface; the actual business logic should remain in the application's normal service/domain layers.
+
+A clean backend-style layout is:
+
+```text
+LLM / Agent
+    ↓
+Tool Adapter / Tool Definition
+    ↓
+Service Layer
+    ↓
+Repository / External Client
+    ↓
+Database / External System
+```
+
+Example:
+
+```text
+get_expense Tool
+      ↓
+ExpenseService.get_expense()
+      ↓
+ExpenseRepository.get_by_id()
+      ↓
+PostgreSQL
+```
+
+### Where does the Controller fit?
+
+A Controller is normally an **HTTP/API entry point for external callers**:
+
+```text
+HTTP Request
+    ↓
+Controller / Route
+    ↓
+Service
+    ↓
+Repository
+```
+
+A model-generated tool call does not have to pass through an HTTP Controller inside the same application. The Tool execution layer can call the service layer directly.
+
+If the capability belongs to another microservice, the Tool can call that service's API instead:
+
+```text
+LLM
+ ↓
+Tool
+ ↓
+Internal HTTP Client
+ ↓
+Other service Controller/API
+ ↓
+Service
+ ↓
+Repository
+```
+
+### Key principle
+
+> **Tool is an adapter at the LLM boundary; Service owns business logic; Repository/clients own data or infrastructure access.**
+
+This keeps the AI-facing interface separate from core business logic and avoids putting business rules directly inside the tool wrapper.
+
+---
+
+# 4. Tool vs Function
 
 A normal Python function is implementation logic:
 
@@ -98,7 +168,7 @@ A function does not automatically become a useful model-facing tool merely becau
 
 ---
 
-# 4. Tool metadata
+# 5. Tool metadata
 
 A useful tool generally exposes:
 
@@ -127,7 +197,7 @@ The **description matters** because the model uses the available tool informatio
 
 ---
 
-# 5. Tool input schema
+# 6. Tool input schema
 
 The schema defines what arguments the tool accepts.
 
@@ -149,7 +219,7 @@ The LLM does not execute the Python function directly. It produces a structured 
 
 ---
 
-# 6. `@tool`
+# 7. `@tool`
 
 LangChain provides a convenient way to expose a Python function as a tool.
 
@@ -170,7 +240,7 @@ The exact generated schema depends on the function signature and supported featu
 
 ---
 
-# 7. Tool vs API
+# 8. Tool vs API
 
 These are not the same concept.
 
@@ -200,7 +270,7 @@ Therefore:
 
 ---
 
-# 8. Tool vs Runnable
+# 9. Tool vs Runnable
 
 ```text
 Runnable
@@ -217,7 +287,7 @@ The concepts can overlap in implementation, but they answer different questions:
 
 ---
 
-# 9. Tool vs Agent
+# 10. Tool vs Agent
 
 ```text
 Tool
@@ -245,7 +315,7 @@ The agent decides which tool to request. The tool performs the capability.
 
 ---
 
-# 10. Read-only vs mutating Tools
+# 11. Read-only vs mutating Tools
 
 This distinction is important in production systems.
 
@@ -278,18 +348,22 @@ Model tool request
        ↓
 Input validation
        ↓
-Authorization
+Authentication / Authorization
        ↓
 Business rules / policy
        ↓
 Optional human approval
+       ↓
+Service
+       ↓
+Repository / external client
        ↓
 Execution
 ```
 
 ---
 
-# 11. The LLM does NOT execute the tool
+# 12. The LLM does NOT execute the tool
 
 This is one of the most important interview points.
 
@@ -319,7 +393,70 @@ LLM
 
 ---
 
-# 12. Tool security
+# 13. Recommended end-to-end mental model for Tool Calling
+
+This is the model to remember for interviews:
+
+```text
+                         USER
+                           ↓
+                         AGENT
+                           ↓
+                         LLM
+                           ↓
+              Needs external information/action?
+                           ↓
+                 Tool request / tool call
+                           ↓
+             Available tools + descriptions/schema
+                           ↓
+              Model selects appropriate capability
+                           ↓
+                 Tool execution boundary
+                           ↓
+        ┌──────────────────┼──────────────────┐
+        ↓                  ↓                  ↓
+     Validate           Authorize          Policy check
+        └──────────────────┼──────────────────┘
+                           ↓
+                    Tool / Tool Adapter
+                           ↓
+                    Service Layer
+                           ↓
+              Repository / External Client
+                           ↓
+                  DB / External System
+                           ↓
+                       Result
+                           ↓
+                    ToolMessage
+                           ↓
+                         Agent
+                           ↓
+                         LLM
+                           ↓
+              Need another tool/action?
+                    /              \
+                  YES              NO
+                   ↓                ↓
+             another cycle      Final answer
+```
+
+### Important refinement
+
+The model does not independently "search" some secret registry after the agent asks it for a tool. The **available tools and their descriptions/schemas are supplied to the model as part of the model interaction**, and the model selects an appropriate tool based on that information.
+
+The runtime then performs the actual execution.
+
+### Interview mental model
+
+> **Agent needs information or an action → model chooses a tool from the available tool definitions → runtime receives the tool call → validates/authenticates/authorizes it → executes the Tool → Service → Repository/external system → result comes back as a ToolMessage → model decides whether it needs another tool or can produce the final answer.**
+
+This is the preferred mental model for our interview preparation.
+
+---
+
+# 14. Tool security
 
 The model should be treated as an **untrusted caller**.
 
@@ -353,7 +490,7 @@ The tool implementation or the surrounding execution layer must enforce the appl
 
 ---
 
-# 13. Tool design best practices
+# 15. Tool design best practices
 
 Good tools tend to be:
 
@@ -395,7 +532,7 @@ Especially useful for operations that may be retried or replayed.
 
 ---
 
-# 14. Tool and structured output
+# 16. Tool and structured output
 
 Both can use schemas, but their purposes differ.
 
@@ -429,7 +566,7 @@ Example tool request:
 
 ---
 
-# 15. Typical Tool interaction
+# 17. Typical Tool interaction
 
 ```text
 User
@@ -489,11 +626,19 @@ The detailed protocol is covered separately in **Tool Calling**.
 
 > A Tool provides a capability; an Agent decides which capabilities or actions to use.
 
-## Q9. How should mutating tools be handled?
+## Q9. Where should tool business logic live?
+
+> The Tool should act as the model-facing adapter. Business logic should remain in the service/domain layer, while repositories or clients handle persistence and infrastructure access. A Controller is only involved when the tool crosses an HTTP service boundary.
+
+## Q10. Who validates a tool call?
+
+> The application/runtime should validate the model-generated request before execution. That includes schema/type validation, authentication and authorization, and domain/business-policy checks. This is conceptually similar to validating an external API request: the model is an untrusted caller.
+
+## Q11. How should mutating tools be handled?
 
 > They should have stronger validation and authorization controls and may require approval or additional policy checks. The model should never be the source of authorization.
 
-## Q10. How would you design tools for a production agent?
+## Q12. How would you design tools for a production agent?
 
 > I would keep them narrow and well described, use explicit input schemas, enforce authentication and authorization at the tool boundary, distinguish read-only from mutating operations, make retry behavior safe where possible, and expose only the minimum capabilities required by the agent.
 
@@ -504,7 +649,7 @@ The detailed protocol is covered separately in **Tool Calling**.
 ```text
                     AGENT / LLM
                          ↓
-                    Tool request
+                   Tool request
                          ↓
                  ┌──────────────┐
                  │ Tool Runtime │
@@ -512,16 +657,19 @@ The detailed protocol is covered separately in **Tool Calling**.
                         ↓
               Validation / Auth / Policy
                         ↓
-              ┌─────────┼─────────┐
-              ↓         ↓         ↓
-           Database     API    Python logic
-              └─────────┼─────────┘
+                   Tool Adapter
+                        ↓
+                    Service
+                        ↓
+              Repository / API client
+                        ↓
+              Database / External System
                         ↓
                     Tool result
                         ↓
                    ToolMessage
                         ↓
-                        LLM
+                    AGENT / LLM
 ```
 
 ## Key takeaway
