@@ -384,26 +384,763 @@ Better:
 
 ---
 
-# Key takeaways so far
+# 3. Prompt Templates
+
+## Prompt
+
+A prompt is the actual instruction/input given to a model.
+
+```text
+Explain Retrieval-Augmented Generation in simple terms.
+```
+
+## Prompt Template
+
+A reusable prompt pattern with runtime variables.
+
+```text
+You are an expert {role}.
+Explain {topic} for the given audience.
+```
+
+Mental model:
+
+```text
+Prompt Template
+      ↓
+Fill runtime variables
+      ↓
+Final prompt
+      ↓
+Model
+```
+
+## PromptTemplate vs f-string
+
+Both can perform variable substitution. An f-string is sufficient for simple interpolation. `PromptTemplate` provides a framework-level abstraction that integrates with LangChain composition and makes inputs explicit and reusable.
+
+Do not claim that PromptTemplate is required for variables; it is mainly valuable for standardization and composition.
+
+## PromptTemplate vs ChatPromptTemplate
+
+### PromptTemplate
+
+Generally text-oriented.
+
+```text
+PromptTemplate
+      ↓
+formatted text
+```
+
+### ChatPromptTemplate
+
+Builds structured chat messages for a chat model.
+
+```text
+ChatPromptTemplate
+      ↓
+SystemMessage
+HumanMessage
+...
+      ↓
+Chat Model
+```
+
+## Variables
+
+Prompts commonly contain runtime values such as:
+
+- user question
+- retrieved context
+- role/domain
+- conversation information
+- formatting instructions
+
+Example:
+
+```text
+Use the following context to answer the question.
+
+Context:
+{context}
+
+Question:
+{question}
+```
+
+## Message placeholders
+
+A message placeholder provides a location where a list of messages, such as conversation history, can be inserted into a chat prompt.
+
+```text
+System instructions
+      ↓
+Message placeholder ← conversation history
+      ↓
+Current human message
+```
+
+## Few-shot prompting
+
+Few-shot prompting provides examples in the prompt to demonstrate the desired behavior/output.
+
+```text
+Instruction
+  +
+Example 1
+Example 2
+  +
+New input
+  ↓
+LLM
+```
+
+## Prompt composition
+
+Larger prompts can be assembled from reusable components:
+
+```text
+System instructions
+        +
+Few-shot examples
+        +
+Conversation history
+        +
+Retrieved context
+        +
+User question
+        ↓
+Final chat prompt
+```
+
+## Prompt templates in RAG
+
+```text
+Question
+   ↓
+Retriever
+   ↓
+Retrieved context
+   ↓
+ChatPromptTemplate
+   ↓
+Chat Model
+   ↓
+Answer
+```
+
+A prompt template does not make the model more intelligent; it provides structured, reusable prompt construction.
+
+## Production prompt management
+
+A production prompt should be treated as an application artifact that may need:
+
+- versioning
+- testing
+- evaluation
+- observability
+- rollback
+
+## Interview questions
+
+### Q1. What is a PromptTemplate?
+
+> A reusable prompt definition containing variables that are populated at runtime. It standardizes prompt construction and composes naturally with other LangChain components.
+
+### Q2. PromptTemplate vs f-string?
+
+> Both can substitute variables. F-strings are fine for simple cases; PromptTemplate provides a framework-level abstraction that integrates with LangChain pipelines and makes prompt inputs explicit and reusable.
+
+### Q3. PromptTemplate vs ChatPromptTemplate?
+
+> PromptTemplate is generally text-oriented, while ChatPromptTemplate constructs structured chat messages such as system and human messages for a chat model.
+
+### Q4. What is a message placeholder?
+
+> A location in a chat prompt where a list of messages, commonly conversation history, can be inserted.
+
+### Q5. What is few-shot prompting?
+
+> Providing a small number of examples in the prompt so the model can infer the desired behavior or output format for a new input.
+
+### Q6. How is PromptTemplate used in RAG?
+
+> Retrieved chunks and the user's question can be passed as variables into a reusable prompt template, which is then sent to the model.
+
+---
+
+# 4. Structured Output
+
+## Definition
+
+Structured output means obtaining model responses that conform to a predefined schema instead of relying on free-form text.
+
+```text
+User input
+   ↓
+LLM
+   ↓
+Structured response
+   ↓
+Schema / validation
+   ↓
+Application object
+```
+
+## Why structured output?
+
+LLMs naturally produce text, while application code often needs typed data.
+
+```text
+Free-form:
+"The expense was ₹4,500 for accommodation."
+
+Structured:
+{
+  "merchant": "Taj Hotels",
+  "amount": 4500,
+  "category": "accommodation"
+}
+```
+
+Structured output creates a stronger interface between probabilistic model output and deterministic application logic.
+
+## Structured output vs JSON
+
+JSON is a data format. Structured output is the broader requirement that the response conform to a predefined structure/schema. The resulting data may be represented as JSON or a typed object.
+
+## Pydantic
+
+Pydantic is useful for defining typed schemas and performing runtime validation.
+
+```python
+class Expense(BaseModel):
+    merchant: str
+    amount: float
+    category: str
+```
+
+Mental model:
+
+```text
+Pydantic schema
+      ↓
+Model structured response
+      ↓
+Validation
+      ↓
+Application object
+```
+
+## Structured output vs Output Parser
+
+An output parser processes model output after generation and converts/validates it. Provider/model-supported structured output can formalize or constrain the response according to a schema, reducing reliance on manual parsing.
+
+Do not claim structured output guarantees semantic correctness.
+
+## Structured output vs Tool Calling
+
+```text
+Structured output
+→ return structured information
+
+Tool calling
+→ request execution of an external action/tool
+```
+
+Both can use schemas, but their purposes differ.
+
+## Structured output in agents
+
+An agent can return a typed decision object:
+
+```python
+class AgentDecision(BaseModel):
+    decision: Literal["approved", "information_required"]
+    reason: str
+```
+
+The backend can then use the decision as a deterministic application input.
+
+## Schema correctness vs business correctness
+
+A schema validates the shape/type of data, not whether the underlying information is correct.
+
+```text
+Schema validation
+→ "Is the data shaped correctly?"
+
+Business validation
+→ "Does this make sense for the domain?"
+```
+
+Both may be required in production.
+
+## Interview questions
+
+### Q1. What is structured output?
+
+> A mechanism for obtaining model responses that conform to a predefined schema instead of relying on free-form text.
+
+### Q2. Why use Pydantic with LLMs?
+
+> To define typed schemas and validate model-generated data before passing it into deterministic application logic.
+
+### Q3. Structured output vs JSON?
+
+> JSON is a data format, while structured output is the requirement that model output conform to a defined schema, potentially represented as JSON or a typed object.
+
+### Q4. Structured output vs output parser?
+
+> An output parser processes model output after generation, while provider-supported structured output can formalize or constrain the response according to a schema.
+
+### Q5. Does structured output guarantee correctness?
+
+> No. It helps with structural correctness; semantic and business correctness still require validation and domain safeguards.
+
+### Q6. Structured output vs tool calling?
+
+> Structured output returns data in a defined schema; tool calling lets the model request an external action using structured arguments.
+
+---
+
+# 5. Runnables
+
+## What is a Runnable?
+
+A Runnable is a LangChain abstraction representing an executable and composable unit.
+
+Mental model:
+
+```text
+Input
+  ↓
+Runnable
+  ↓
+Output
+```
+
+Prompt templates, models, parsers, retrievers, and custom logic can participate in the Runnable model.
+
+## Why Runnables exist
+
+They provide a common execution/composition model instead of every component having unrelated orchestration APIs.
+
+```text
+Runnable A
+    ↓
+Runnable B
+    ↓
+Runnable C
+```
+
+## Pipe composition
+
+```python
+chain = prompt | model | parser
+```
+
+Conceptually:
+
+```text
+input
+  ↓
+prompt
+  ↓
+model
+  ↓
+parser
+  ↓
+output
+```
+
+The `|` operator composes compatible runnables; it does not execute the pipeline immediately. Execution happens when the resulting runnable is invoked/streamed/batched.
+
+## Common execution operations
+
+- `invoke()` — one input, one result
+- `stream()` — incremental output
+- `batch()` — multiple inputs
+
+## RunnableSequence
+
+A sequence composes runnables in order:
+
+```text
+A → B → C
+```
+
+For example:
+
+```python
+prompt | model | parser
+```
+
+## RunnableParallel
+
+Parallel composition allows multiple branches to work from the same input.
+
+```text
+       ┌→ A ─┐
+Input ─┤     ├→ combined result
+       └→ B ─┘
+```
+
+Useful for independent operations such as multiple lookups or independent transformations.
+
+## RunnablePassthrough
+
+Passes its input through unchanged. This is useful when preserving the original input while deriving additional values.
+
+Conceptually:
+
+```text
+Question
+  ├────────→ original question
+  └→ Retriever → context
+```
+
+## RunnableLambda
+
+Wraps custom Python logic so it can participate in the Runnable composition model.
+
+```python
+def clean_context(value):
+    return value.strip()
+
+cleaner = RunnableLambda(clean_context)
+```
+
+Use this for custom logic when an existing LangChain component does not already provide the behavior you need.
+
+## Built-in implementations vs RunnableLambda
+
+LangChain provides many Runnable-compatible implementations; applications do not need to use `RunnableLambda` for every pipeline step.
+
+Examples:
+
+```text
+Prompt
+  → ChatPromptTemplate
+
+Model
+  → provider integration such as a chat model class
+
+Parser
+  → built-in output parser implementations
+
+Custom application logic
+  → RunnableLambda when needed
+```
+
+This means the typical model is:
+
+```text
+LangChain components
+        +
+Provider integrations
+        +
+Your custom Runnable logic
+        ↓
+Composed pipeline
+```
+
+## Runnable vs Agent
+
+A Runnable is an execution/composition abstraction.
+
+An Agent is a decision-making system that can dynamically choose actions or tools.
+
+Mental model:
+
+```text
+Runnable
+→ How is this component executed?
+
+Agent
+→ What should I do next?
+```
+
+## Runnable vs Chain
+
+Historically, LangChain exposed many specialized Chain classes. Modern LangChain emphasizes the Runnable interface for general composition.
+
+Useful mental model:
+
+```text
+Runnable
+= fundamental execution/composition abstraction
+
+Chain
+= workflow/pipeline concept
+```
+
+## Interview questions
+
+### Q1. What is a Runnable?
+
+> A Runnable is a LangChain abstraction for an executable and composable unit, with a common execution model such as invoke, stream, and batch.
+
+### Q2. What does `prompt | model | parser` mean?
+
+> It composes Runnable-compatible components into a sequential pipeline where each stage's output feeds the next stage's input.
+
+### Q3. What is RunnableSequence?
+
+> A sequential composition of Runnable components.
+
+### Q4. What is RunnableParallel?
+
+> A composition that lets multiple runnable branches operate from the same input and return a combined result.
+
+### Q5. What is RunnablePassthrough?
+
+> A runnable that passes its input through unchanged, useful for preserving original inputs while generating additional values.
+
+### Q6. What is RunnableLambda?
+
+> A way to wrap custom Python logic so that it participates in LangChain's Runnable composition model.
+
+### Q7. Why isn't RunnableLambda used for every step?
+
+> Because LangChain already provides many Runnable-compatible components for prompts, models, parsers, retrievers and other operations. RunnableLambda is mainly useful when custom application logic is needed.
+
+### Q8. What happens when you write `prompt | model | parser`?
+
+> The components are composed into a sequential runnable pipeline. The composition itself does not perform execution; invoking the resulting runnable performs the work.
+
+---
+
+# 6. Chains
+
+## Definition
+
+A Chain is a workflow that connects multiple processing steps into a single application flow.
+
+```text
+Input
+  ↓
+Step A
+  ↓
+Step B
+  ↓
+Step C
+  ↓
+Output
+```
+
+Example:
+
+```text
+Question
+  ↓
+Prompt
+  ↓
+LLM
+  ↓
+Parser
+  ↓
+Answer
+```
+
+## Why chains are useful
+
+A chain lets an application treat several connected operations as one workflow.
+
+Instead of manually executing:
+
+```python
+prompt_result = prompt.invoke(data)
+model_result = model.invoke(prompt_result)
+final_result = parser.invoke(model_result)
+```
+
+we can compose:
+
+```python
+chain = prompt | model | parser
+final_result = chain.invoke(data)
+```
+
+## Historical Chain classes
+
+Older LangChain code commonly used specialized chain classes for predefined workflows, such as:
+
+- `LLMChain`
+- `SequentialChain`
+- `RetrievalQA`
+
+These are useful to recognize when reading existing code and understanding LangChain's evolution.
+
+## Modern Runnable composition
+
+Modern LangChain emphasizes Runnables as the common composition/execution abstraction.
+
+So rather than thinking:
+
+```text
+Everything must be a Chain class
+```
+
+think:
+
+```text
+Runnable components
+      ↓
+compose them into a workflow
+      ↓
+chain/pipeline
+```
+
+## Specialized Chain classes vs Runnables
+
+Interview mental model:
+
+```text
+Specialized Chain class
+→ often encapsulates a common/predefined workflow
+
+Runnable composition
+→ gives more granular building blocks so the developer can explicitly compose the pipeline
+```
+
+Important nuance:
+
+Do not claim that Chain classes cannot be customized, or that Runnables automatically provide dynamic routing. Complex dynamic branching, cycles and stateful orchestration are better modeled with LangGraph.
+
+A stronger statement is:
+
+> Historically, LangChain provided specialized Chain classes that encapsulated common workflows. Runnable composition provides more granular building blocks for explicitly constructing and customizing pipelines. For complex dynamic routing, branching, loops and persistent state, LangGraph is the more appropriate abstraction.
+
+## Chain vs Agent
+
+### Chain
+
+```text
+A → B → C → D
+```
+
+The application largely determines the workflow.
+
+### Agent
+
+```text
+            ┌→ Tool A
+User → LLM ─┼→ Tool B
+            └→ Tool C
+                 ↓
+                LLM
+                 ↓
+              Answer
+```
+
+The model can dynamically decide which tool/action to take.
+
+## Chain vs LangGraph
+
+Simple predefined flow:
+
+```text
+A → B → C → D
+```
+
+Stateful graph:
+
+```text
+       A
+       ↓
+       B
+      / \
+     C   D
+     ↓   ↓
+     └→ B
+```
+
+LangGraph is designed for explicit state, branching, loops, persistence, interrupts and human-in-the-loop workflows.
+
+## Chain vs RunnableSequence
+
+`RunnableSequence` is a specific sequential Runnable composition. "Chain" is the broader workflow concept and historical LangChain terminology.
+
+## Chain is not limited to LLM calls
+
+A chain/workflow can connect prompts, models, retrievers, parsers and custom logic as long as the components can participate in the required composition interface.
+
+## RAG chain mental model
+
+```text
+Question
+   ↓
+Retriever
+   ↓
+Documents
+   ↓
+Prompt
+   ↓
+Chat Model
+   ↓
+Answer
+```
+
+## Interview questions
+
+### Q1. What is a Chain?
+
+> A Chain is a composed application workflow in which multiple processing steps are connected so outputs from earlier stages feed later stages.
+
+### Q2. Chain vs Runnable?
+
+> Runnable is the standardized execution/composition abstraction in modern LangChain, while Chain is the broader workflow concept. Modern chain-like pipelines are commonly expressed as Runnable compositions.
+
+### Q3. What does `prompt | model | parser` represent?
+
+> A sequential composition of Runnable-compatible components.
+
+### Q4. Chain vs Agent?
+
+> A chain generally follows a predefined workflow, while an agent can dynamically decide which tools or actions to take.
+
+### Q5. Chain vs LangGraph?
+
+> Chains are a good fit for relatively straightforward predefined flows. LangGraph is better for explicit stateful workflows with branching, loops, persistence and human-in-the-loop requirements.
+
+### Q6. Are Chain classes unable to customize their flow?
+
+> No. The key distinction is that specialized Chain classes often encapsulate common workflows, while Runnable composition gives more granular control over how components are composed. Dynamic routing and cycles are a separate concern where LangGraph becomes useful.
+
+### Q7. What happens when you compose a chain with `|`?
+
+> You create a Runnable-based composition. Execution occurs when the resulting object is invoked, streamed or batched.
+
+---
+
+# Key takeaways
 
 ```text
 LangChain
   = LLM application framework/ecosystem
 
-LangChain ≠ LLM
-  = it sits above model providers
+Model Interface
+  = standardized way to interact with model providers
 
 Chat Model
   = message-in / message-out model interface
 
-Messages
-  = structured units of model context and interaction
+Prompt Template
+  = reusable parameterized prompt construction
+
+Structured Output
+  = schema-conforming model response
+
+Runnable
+  = executable/composable LangChain unit
 
 Chain
-  = predefined execution flow
+  = composed workflow/pipeline
 
 Agent
-  = dynamic action/tool selection
+  = dynamic decision-making/tool selection
 
 LangGraph
   = stateful workflow/agent orchestration
