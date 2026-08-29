@@ -141,6 +141,52 @@ A strong honest answer is:
 
 > My current AI platform uses custom abstractions for model providers, retrieval, reranking and tool boundaries. I understand LangChain's abstractions and how they map to those concerns, but I distinguish that from having operated LangChain in production.
 
+## Ingestion vs Retrieval: where does LangChain fit?
+
+LangChain can support **both document ingestion and retrieval/RAG**.
+
+### Ingestion
+
+LangChain provides components commonly used for ingestion workflows, such as document loaders, text splitters, embeddings integrations and vector-store integrations.
+
+```text
+Source document
+      ↓
+Document Loader
+      ↓
+Document objects
+      ↓
+Text splitting
+      ↓
+Embeddings
+      ↓
+Vector store
+```
+
+### Retrieval / RAG
+
+LangChain also provides abstractions for retrieval and composing retrieval with prompts and models.
+
+```text
+User query
+     ↓
+Retriever
+     ↓
+Relevant documents
+     ↓
+Prompt
+     ↓
+Chat model
+     ↓
+Answer
+```
+
+### Interview positioning
+
+LangChain is **not limited to retrieval**, and it is **not required to own ingestion**. In production systems, document ingestion is often implemented as a dedicated pipeline/service, while LangChain may be used more heavily in retrieval/RAG and agent/application orchestration.
+
+For a platform architecture, keep ingestion and application orchestration as separate concerns unless there is a clear reason to couple them.
+
 ---
 
 # 2. Model Interfaces
