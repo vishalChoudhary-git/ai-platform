@@ -58,6 +58,12 @@ Learn → Basic example → Medium example → AI/RAG example
 
 > RAG evaluation/observability, LangChain and LangGraph are explicit high-priority additions based on interview feedback and the role's AI-agent focus.
 
+## Scenario-based interview practice
+
+For RAG and production-AI preparation, use the dedicated [RAG Scenario-Based Interview Questions](lead-ai-engineer-interview-topics/31-rag-scenario-based-interview-questions.md) page.
+
+These questions focus on **diagnosis, root-cause analysis, evaluation, scaling, latency, hallucination, retrieval failures and production trade-offs** rather than simple definitions.
+
 ## Interview feedback — update to preparation priorities
 
 The interview included deep questions around:
