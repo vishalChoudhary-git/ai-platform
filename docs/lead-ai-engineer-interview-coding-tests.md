@@ -438,3 +438,13 @@ Expected answer structure:
 3. `list.sort()` mutates the original list; `sorted()` returns a new list.
 4. Use `enumerate(..., start=1)` for human-readable ranking.
 5. Async primarily helps I/O-bound concurrency; it does not automatically speed up CPU-bound work.
+
+---
+
+## Additional coding tests
+
+A separate expanded coding bank has been added at:
+
+`docs/lead-ai-engineer-interview-coding-tests-additional.md`
+
+It includes the exact Min Stack exercise from the interview plus production-oriented exercises for exponential backoff, minimal RAG, LLM database tools, Top-K retrieval, chunk deduplication/RRF, LRU cache, bounded async embedding, rate limiting, metadata filtering and a final production coding simulation.
