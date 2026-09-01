@@ -114,7 +114,7 @@ Trace:
 ```text
 Query
  ↓
-Parsing / query transformation
+Query transformation
  ↓
 Embedding
  ↓
@@ -203,56 +203,67 @@ Retriever
 Model
 ```
 
-tracing can capture nested execution so a single request can be inspected end-to-end.
+Tracing can capture nested execution so a single request can be inspected end-to-end.
 
 This is particularly valuable for debugging agent loops because the developer can see the sequence of model calls and tool calls instead of only the final answer.
 
-## 11. LangSmith
+## 11. SLI / SLO / SLA
 
-> **LangSmith is an observability, tracing and evaluation platform from the LangChain ecosystem for inspecting LLM/agent application runs and evaluating their behavior.**
+### SLI
+A measured indicator.
+
+Example:
+
+```text
+p95 chat latency
+```
+
+### SLO
+The target for that indicator.
+
+```text
+99% of chat requests under X seconds
+```
+
+### SLA
+A contractual commitment to customers, often with consequences if the commitment is missed.
 
 Mental model:
 
 ```text
-AI application
-      ↓
-LangChain / LangGraph / SDK
-      ↓
-Tracing instrumentation
-      ↓
-LangSmith
-      ↓
-Runs / traces / datasets / evaluations
+SLI → measurement
+SLO → engineering target
+SLA → contractual commitment
 ```
 
-LangSmith can be used beyond the exact same framework codebase; the core value is application observability and evaluation rather than being the LLM itself.
+## 12. AI-specific quality monitoring
 
-## 12. What does a LangSmith trace help answer?
+Operational health is not the same as AI quality.
 
-For an agent request:
+A system can be:
 
 ```text
-Why was this tool selected?
-Which tools were called?
-What arguments were produced?
-How long did each step take?
-How many model calls happened?
-How many tokens were used?
-Where did the workflow fail?
+HTTP 200 ✅
+Latency ✅
+CPU ✅
 ```
 
-For RAG:
+while still producing a bad answer.
+
+Track quality signals such as:
 
 ```text
-Which chunks were retrieved?
-What was the final context?
-Which model generated the answer?
-How much latency/cost came from each stage?
+retrieval relevance
+context precision/recall
+faithfulness
+answer correctness
+citation accuracy
+user feedback
 ```
+
+Do not rely on one metric to represent overall AI quality.
 
 ## 13. Evaluation vs Observability
-
-These are related but different.
 
 ```text
 Observability
@@ -305,67 +316,7 @@ LLM cost anomaly
 fallback rate spike
 ```
 
-AI systems may also use quality-related alerting where reliable online signals exist.
-
-## 16. SLI / SLO / SLA
-
-### SLI
-A measured indicator.
-
-Example:
-
-```text
-p95 chat latency
-```
-
-### SLO
-The target for that indicator.
-
-```text
-99% of chat requests under X seconds
-```
-
-### SLA
-A contractual commitment to customers, often with consequences if the commitment is missed.
-
-Mental model:
-
-```text
-SLI → measurement
-SLO → engineering target
-SLA → contractual commitment
-```
-
-## 17. AI-specific quality monitoring
-
-Operational health is not the same as AI quality.
-
-A system can be:
-
-```text
-HTTP 200 ✅
-Latency ✅
-CPU ✅
-```
-
-while still producing a bad answer.
-
-Track quality signals such as:
-
-```text
-retrieval relevance
-context precision/recall
-faithfulness
-aer? answer correctness
-citation accuracy
-user feedback
-```
-
-Do not rely on one metric to represent overall AI quality.
-
-## 18. Debugging workflow
-
-A good production debugging sequence:
+## 16. Debugging workflow
 
 ```text
 1. Find request/trace ID
@@ -379,7 +330,7 @@ A good production debugging sequence:
 9. Re-evaluate quality and latency
 ```
 
-## 19. Security of telemetry
+## 17. Security of telemetry
 
 Observability systems themselves are sensitive.
 
@@ -396,7 +347,7 @@ tool arguments with sensitive values
 
 Use redaction, access controls, retention policies and least-privilege access.
 
-## 20. Interview questions
+## Interview questions
 
 ### What is observability?
 
@@ -418,21 +369,17 @@ Use redaction, access controls, retention policies and least-privilege access.
 
 > Lifecycle hooks/handlers that allow execution events from models, tools and other components to be observed or instrumented.
 
-### What is LangSmith?
-
-> An observability and evaluation platform for tracing LLM/agent application runs, inspecting execution steps, collecting datasets and evaluating application behavior.
-
-### LangSmith vs LangChain?
-
-> LangChain is the application framework/ecosystem for LLM applications; LangSmith is the observability/evaluation platform used to inspect and evaluate those applications.
-
-### LangSmith vs OpenTelemetry?
-
-> LangSmith is specialized for LLM/agent application tracing and evaluation, while OpenTelemetry is a vendor-neutral telemetry standard/ecosystem for general application observability. They can coexist.
-
 ### What would you monitor in a RAG system?
 
 > Retrieval latency and candidate quality, reranker latency, final context size, LLM latency/TTFT, token usage, cost, errors, cache hit rate and AI-quality metrics such as faithfulness and retrieval relevance.
+
+### LangSmith vs LangChain?
+
+> LangChain is the LLM application framework/ecosystem; LangSmith is the observability and evaluation platform used to inspect and evaluate LLM/agent applications.
+
+### LangSmith vs OpenTelemetry?
+
+> LangSmith is specialized for LLM/agent tracing and evaluation, while OpenTelemetry is a vendor-neutral telemetry standard/ecosystem for general application observability. They can coexist.
 
 ### How do you debug a bad AI answer?
 
@@ -456,8 +403,6 @@ what happened?        how much/how often?    where did it happen?
                               AI-specific signals
                                        ↓
                          Retrieval / LLM / cost / quality
-                                       ↓
-                              LangSmith / OTel
 ```
 
 ## Checklist
@@ -470,7 +415,7 @@ what happened?        how much/how often?    where did it happen?
 - [x] RAG tracing
 - [x] LLM/token/cost telemetry
 - [x] LangChain callbacks
-- [x] LangSmith tracing
+- [x] LangChain tracing
 - [x] observability vs evaluation
 - [x] OpenTelemetry
 - [x] alerting
