@@ -126,6 +126,86 @@ Production points:
 - connection reuse
 - logging and tracing
 
+# Python Coding Interview Question Bank
+
+The following questions are added from the interview-question reference shared during preparation. They belong in the Python topic because they test Python fundamentals, problem solving, data structures, algorithms and production-oriented optimization.
+
+## Round 2 — Python + Coding
+
+### Python fundamentals
+
+1. **What are the differences between List, Tuple, Set and Dictionary?**
+   - Discuss ordering, mutability, duplicates, indexing, hashing and typical lookup complexity.
+   - Follow-up: When would you choose a set over a list in production code?
+   - Follow-up: Why must dictionary keys generally be hashable?
+
+2. **What is the difference between shallow copy and deep copy?**
+   - Explain references and nested mutable objects.
+   - Follow-up: Give an example where a shallow copy causes an unexpected production bug.
+
+3. **What are decorators, generators and iterators in Python?**
+   - Be able to explain each concept and write a small example.
+   - Follow-up: Why would a generator be preferable when processing a very large dataset?
+   - Follow-up: What is the relationship between `iter()` and `next()`?
+
+4. **How does memory management work in Python?**
+   - Know reference counting, garbage collection, object allocation and the role of the Python memory manager.
+   - Follow-up: What can cause memory usage to keep growing in a long-running Python service?
+
+### Coding / problem solving
+
+5. **How would you find duplicate elements in an array/list?**
+   - Preferred baseline: use a set/dictionary for approximately O(n) time and O(n) additional space.
+   - Follow-up: Can you do it with less additional memory? What trade-off does that introduce?
+
+6. **How would you find the frequency of elements in a list?**
+   - Know both a dictionary approach and `collections.Counter`.
+   - Follow-up: How would you process the same problem when the input is too large to fit in memory?
+
+7. **Implement binary search and explain its time complexity.**
+   - Know the iterative implementation and why the input must be ordered.
+   - Complexity: O(log n) time and O(1) auxiliary space for the iterative version.
+   - Follow-up: What changes if the data is not sorted?
+
+8. **How would you optimize Python code working with a large dataset?**
+   - Consider algorithmic complexity first, generators/streaming, batching, avoiding unnecessary copies, efficient data structures, vectorization where appropriate, database-side filtering/aggregation, concurrency for I/O-bound work and profiling before optimization.
+   - Follow-up: How would you identify whether the bottleneck is CPU, memory, I/O or the database?
+   - Follow-up: What would you measure before and after the optimization?
+
+### AI-engineering-oriented coding follow-ups
+
+These questions connect the Python coding round to the AI Engineer role:
+
+- Given a list of retrieved chunks with scores, return the top-K chunks efficiently.
+- Merge results from vector and keyword retrieval while preserving the best score for duplicate documents.
+- Implement RRF scoring for multiple ranked result lists.
+- Group retrieved chunks by document ID and return the best-ranked chunk from each document.
+- Stream a large document instead of loading the entire file into memory.
+- Process a large batch of embedding requests without exhausting memory or exceeding provider rate limits.
+- Implement bounded concurrency for multiple async LLM/embedding/API calls.
+- Write a retry helper with timeout, exponential backoff and a maximum retry count.
+- Given AI request records, calculate request counts, average latency, p95 latency and total token usage.
+
+## What to prioritize
+
+For the AI Engineer interview, these are higher priority than obscure Python trivia:
+
+```text
+Data structures + complexity
+        ↓
+Clean Python implementation
+        ↓
+Memory efficiency
+        ↓
+Async/concurrency for I/O
+        ↓
+Error handling + retries
+        ↓
+Production optimization
+        ↓
+AI/RAG-oriented coding problems
+```
+
 # Project-connected design patterns
 
 For interview preparation, we will learn design patterns from the code that already exists in `ai-platform`, rather than relying mainly on toy `ExpenseRepository` examples.
@@ -410,6 +490,7 @@ class Answer(BaseModel):
 - [x] ABC / abstraction — project example
 - [x] Dependency injection — project example
 - [x] Strategy concept — project example
+- [x] Python + Coding interview question bank
 - [ ] Pydantic hands-on exercise
 - [ ] Full parser Strategy/Plugin implementation
 - [ ] Chunking
