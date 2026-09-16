@@ -5,7 +5,7 @@ from redis.asyncio import Redis
 
 from app.core.cache import get_redis
 from app.core.db.session import async_session_factory
-from app.core.notifications import SmtpEmailSender
+from app.core.notifications import get_email_sender
 from app.core.storage.cloudflare_r2 import CloudflareR2StorageProvider
 from app.features.documents.repositories import DocumentRepository
 from app.features.documents.repositories.document_chunk_repository import DocumentChunkRepository
@@ -44,7 +44,7 @@ async def process_expense_documents_in_background(
         document_service = DocumentService(document_repository, storage)
         expense_service = ExpenseService(session, document_service)
         knowledge_service = KnowledgeService(create_rag_service(session))
-        notification_service = ExpenseNotificationService(SmtpEmailSender.from_settings())
+        notification_service = ExpenseNotificationService(get_email_sender())
         await ExpenseResolutionService(
             session=session,
             expense_service=expense_service,
