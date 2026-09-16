@@ -43,10 +43,10 @@ OPENAI_API_KEY=...
 TAVILY_API_KEY=...
 ```
 
-Then run:
+Then run the module from the repository root:
 
 ```bash
-python examples/agentic/travel_agent/main.py
+python -m examples.agentic.travel_agent.main
 ```
 
 Use the same `thread_id` to demonstrate checkpoint-backed conversation state across turns.
