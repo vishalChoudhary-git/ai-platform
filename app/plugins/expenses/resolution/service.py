@@ -6,7 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.knowledge.services import KnowledgeService
 from app.plugins.expenses.agent.agent import ExpenseAgent
-from app.plugins.expenses.models import ExpenseApproval, ExpenseApprovalStatus, ExpenseRequiredAction
+from app.plugins.expenses.models import (
+    ExpenseApproval,
+    ExpenseApprovalStatus,
+    ExpenseRequiredAction,
+)
 from app.plugins.expenses.services import ExpenseService
 from app.plugins.expenses.tools import ExpenseAgentTools
 
@@ -67,13 +71,15 @@ class ExpenseResolutionService:
                     )
                 )
                 logger.info(
-                    "ExpenseResolutionService.resolve: manager_approval_created expense_id=%s manager=%s",
+                    "ExpenseResolutionService.resolve: "
+                    "manager_approval_created expense_id=%s manager=%s",
                     expense_id,
                     expense.manager_email,
                 )
             else:
                 logger.info(
-                    "ExpenseResolutionService.resolve: manager_approval_exists expense_id=%s manager=%s",
+                    "ExpenseResolutionService.resolve: "
+                    "manager_approval_exists expense_id=%s manager=%s",
                     expense_id,
                     expense.manager_email,
                 )
@@ -81,7 +87,8 @@ class ExpenseResolutionService:
         await self.session.commit()
 
         logger.info(
-            "ExpenseResolutionService.resolve: persisted expense_id=%s status=%s required_action=%s",
+            "ExpenseResolutionService.resolve: "
+            "persisted expense_id=%s status=%s required_action=%s",
             expense_id,
             expense.status.value,
             expense.required_action.value,

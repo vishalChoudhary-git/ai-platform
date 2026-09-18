@@ -2,7 +2,11 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import uuid4
 
-from app.plugins.expenses.models.enums import ExpenseDocumentRole, ExpenseRequiredAction, ExpenseStatus
+from app.plugins.expenses.models.enums import (
+    ExpenseDocumentRole,
+    ExpenseRequiredAction,
+    ExpenseStatus,
+)
 from app.plugins.expenses.schemas import ExpenseResponse
 
 
