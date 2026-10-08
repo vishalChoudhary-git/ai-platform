@@ -140,6 +140,11 @@ The correct metric depends on the embedding model and whether vectors are normal
 
 ### Normalization
 Vectors may be scaled to unit length. With normalized vectors, cosine similarity and dot product become closely related.
+ ## Massively Faster Search (The Main Engineering Reason)
+ When performing semantic search, the most common metric used to find relevant chunks is Cosine Similarity.
+The mathematical formula for cosine similarity requires calculating the dot product of two vectors and then dividing it by the product of their lengths (magnitudes):
+  Cosine Similarity = (A • B) / (||A|| * ||B||)
+Without storage normalization: Every single time a user submits a query, the vector database has to calculate the magnitudes (\(\Vert{}A\Vert{}\) and \(\Vert{}B\Vert{}\)) for millions of stored vectors dynamically to divide them. This creates a massive computational bottleneck.
 
 ### Embedding versioning
 Store the embedding model/version with indexed data. A model change can alter dimensions or vector semantics, so reindexing should be controlled rather than mixing incompatible embeddings.
